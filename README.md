@@ -36,3 +36,6 @@
 其他值参考vertx文档。
 默认模板引擎是，freemarker。
 其他配置项，参考vertx的 `HttpServerOptions`
+
+#### 注意
+编译的时候，记得加 -parameters
