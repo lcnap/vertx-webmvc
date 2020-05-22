@@ -1,7 +1,7 @@
-package pers.lcnap.vertx.websupport.utils;
+package pers.lcnap.vertx.webmvc.utils;
 
 
-import pers.lcnap.vertx.websupport.HttpHandler;
+import pers.lcnap.vertx.webmvc.HttpHandler;
 
 import java.io.File;
 import java.lang.reflect.Method;

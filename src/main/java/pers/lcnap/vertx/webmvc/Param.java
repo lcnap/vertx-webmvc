@@ -1,4 +1,4 @@
-package pers.lcnap.vertx.websupport;
+package pers.lcnap.vertx.webmvc;
 
 import java.lang.annotation.*;
 

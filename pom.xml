@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>pers.lcnap</groupId>
-    <artifactId>vertx-webmvc-support</artifactId>
+    <artifactId>vertx-webmvc</artifactId>
     <version>1.0-SNAPSHOT</version>
 
     <properties>

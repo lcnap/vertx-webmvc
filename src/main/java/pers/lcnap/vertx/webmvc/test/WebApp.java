@@ -1,11 +1,11 @@
-package pers.lcnap.vertx.websupport.test;
+package pers.lcnap.vertx.webmvc.test;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
-import pers.lcnap.vertx.websupport.HttpHandler;
-import pers.lcnap.vertx.websupport.Param;
-import pers.lcnap.vertx.websupport.SimpleWebApplication;
+import pers.lcnap.vertx.webmvc.HttpHandler;
+import pers.lcnap.vertx.webmvc.Param;
+import pers.lcnap.vertx.webmvc.SimpleWebApplication;
 
 import java.time.LocalDateTime;
 

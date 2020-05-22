@@ -1,4 +1,4 @@
-package pers.lcnap.vertx.websupport.impl;
+package pers.lcnap.vertx.webmvc.impl;
 
 
 import io.vertx.core.Handler;
@@ -20,12 +20,11 @@ import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.handler.LoggerFormat;
 import io.vertx.ext.web.handler.LoggerHandler;
 import io.vertx.ext.web.handler.StaticHandler;
-
-import pers.lcnap.vertx.websupport.ClientException;
-import pers.lcnap.vertx.websupport.HttpHandler;
-import pers.lcnap.vertx.websupport.Param;
-import pers.lcnap.vertx.websupport.SimpleWebApplication;
-import pers.lcnap.vertx.websupport.utils.Reflection;
+import pers.lcnap.vertx.webmvc.ClientException;
+import pers.lcnap.vertx.webmvc.HttpHandler;
+import pers.lcnap.vertx.webmvc.Param;
+import pers.lcnap.vertx.webmvc.SimpleWebApplication;
+import pers.lcnap.vertx.webmvc.utils.Reflection;
 
 import java.lang.reflect.*;
 import java.util.*;

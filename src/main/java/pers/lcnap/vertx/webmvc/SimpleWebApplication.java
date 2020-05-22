@@ -1,8 +1,8 @@
-package pers.lcnap.vertx.websupport;
+package pers.lcnap.vertx.webmvc;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServer;
-import pers.lcnap.vertx.websupport.impl.SimpleWebApplicationImpl;
+import pers.lcnap.vertx.webmvc.impl.SimpleWebApplicationImpl;
 
 public interface SimpleWebApplication {
 
