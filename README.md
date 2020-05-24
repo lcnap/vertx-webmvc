@@ -10,7 +10,7 @@
 ```
 
 #### 业务代码样例
-详细参考 **详细参考**
+详细参考 `test/WebApp.java`
 ```
     @HttpHandler(path = "/hi",contentType = "text/plain; charset=utf-8")
     public String hi(@Param String msg){
