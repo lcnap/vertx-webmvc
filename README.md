@@ -9,7 +9,8 @@
    SimpleWebApplication.run(Vertx vertx, Class<?> appClass);
 ```
 
-#### 业务代码
+#### 业务代码样例
+详细参考 **详细参考**
 ```
     @HttpHandler(path = "/hi",contentType = "text/plain; charset=utf-8")
     public String hi(@Param String msg){
@@ -32,10 +33,14 @@
 
 #### 配置
 默认配置文件是 **resources/http-server.json** 
-只加了，  **"templateEngine": "io.vertx.ext.web.templ.freemarker.FreeMarkerTemplateEngine"**  这个自定义配置项，
-其他值参考vertx文档。
+只加了，
+  **"templateEngine": "io.vertx.ext.web.templ.freemarker.FreeMarkerTemplateEngine"**  
+这个自定义配置项，其他值参考vertx文档。
 默认模板引擎是，freemarker。
 其他配置项，参考vertx的 `HttpServerOptions`
 
 #### 注意
-编译的时候，记得加 -parameters
+编译的时候，记得加 -parameters。
+
+#### 成熟度
+只用于练手，或学习。
