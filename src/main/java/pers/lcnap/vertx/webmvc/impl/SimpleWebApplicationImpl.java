@@ -42,7 +42,10 @@ import pers.lcnap.vertx.webmvc.Param;
 import pers.lcnap.vertx.webmvc.SimpleWebApplication;
 import pers.lcnap.vertx.webmvc.utils.Reflection;
 
-import java.lang.reflect.*;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -51,7 +54,7 @@ public class SimpleWebApplicationImpl implements SimpleWebApplication {
 
     private String httpServerConfig = "http-server.json";
 
-    private final String DEFAULT_TEMPLATEENGINE = "io.vertx.ext.web.templ.freemarker.FreeMarkerTemplateEngine";
+    private final String DEFAULT_TEMPLATE_ENGINE = "io.vertx.ext.web.templ.freemarker.FreeMarkerTemplateEngine";
 
     private Class<?> appClass;
 
@@ -71,13 +74,43 @@ public class SimpleWebApplicationImpl implements SimpleWebApplication {
     }
 
     public HttpServer run() throws RuntimeException {
+        HttpServerOptions serverOptions = readConfigFile();
+
+        httpServer = vertx.createHttpServer(serverOptions);
+
+        rootRouter = Router.router(vertx);
+
+        rootRouter.route().handler(LoggerHandler.create(LoggerFormat.TINY));
+
+        rootRouter.route().failureHandler(rc -> {
+            logger.error(rc.failure().getMessage());
+            int statusCode = 500;
+            if (rc.failure() instanceof ClientException) {
+                statusCode = 400;
+            }
+            rc.response().setStatusCode(statusCode).end(rc.failure().getMessage());
+
+        });
+
+        rootRouter.route().handler(BodyHandler.create());
+        rootRouter.route("/static/*").handler(StaticHandler.create("static"));
+
+        scanHttpHandler();
+
+        HttpServer server = httpServer.requestHandler(rootRouter).listen();
+        logger.info("server start.");
+
+        return server;
+    }
+
+    private HttpServerOptions readConfigFile() {
         JsonObject config = null;
-        Buffer buffer = null;
+        Buffer buffer;
         try {
             buffer = vertx.fileSystem().readFileBlocking(httpServerConfig);
             config = new JsonObject(buffer);
             logger.info(config.toString());
-        }catch (Exception e){
+        } catch (Exception e) {
             logger.info(e.getMessage());
             serverOptions = new HttpServerOptions();
         }
@@ -89,39 +122,12 @@ public class SimpleWebApplicationImpl implements SimpleWebApplication {
         }
 
 
-        String templateEngineClass = DEFAULT_TEMPLATEENGINE;
+        String templateEngineClass = DEFAULT_TEMPLATE_ENGINE;
         if (!(config.getString("templateEngine") == null)){
             templateEngineClass = config.getString("templateEngine");
         }
         initEngine(templateEngineClass);
-
-
-        httpServer = vertx.createHttpServer(serverOptions);
-
-        rootRouter = Router.router(vertx);
-        rootRouter.route().handler(LoggerHandler.create(LoggerFormat.TINY));
-        rootRouter.route().failureHandler(rc -> {
-            logger.error(rc.failure().getMessage());
-            if (rc.failure() instanceof ClientException) {
-                rc.response().setStatusCode(400).end(rc.failure().getMessage());
-            } else {
-                rc.response().setStatusCode(500).end(rc.failure().getMessage());
-            }
-
-        });
-        rootRouter.route().handler(BodyHandler.create());
-
-
-        rootRouter.route("/static/*").handler(StaticHandler.create("static"));
-
-
-        scanHttpHandler();
-
-
-        HttpServer server = httpServer.requestHandler(rootRouter).listen();
-
-        logger.info("server start.");
-        return server;
+        return serverOptions;
     }
 
     private void initEngine(String className) {
@@ -136,7 +142,7 @@ public class SimpleWebApplicationImpl implements SimpleWebApplication {
 
                 Method create = aClass.getDeclaredMethod("create", Vertx.class);
                 engine = (TemplateEngine) create.invoke(aClass, vertx);
-            } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+            } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         }
@@ -183,27 +189,27 @@ public class SimpleWebApplicationImpl implements SimpleWebApplication {
 
                         String path = annotation.path();
                         HttpMethod[] httpMethods = annotation.method();
-                        Route route ;
+                        Route route;
+
+                        //方法路由
                         if (httpMethods.length != 1) {
                             route = classRouter.route(path);
                         } else {
                             route = classRouter.route(httpMethods[0], path);
                         }
-                        if(annotation.consumes().contains("text")){
-                            route = route.consumes("text/*");
-                        } else if (annotation.consumes().contains("json")){
-                            route = route.consumes("*/json");
-                        }
 
-                        if(annotation.isBlocking()){
+
+                        if (annotation.isBlocking()) {
                             route.blockingHandler(handler);
-                        }else {
+                        } else {
                             route.handler(handler);
                         }
 
 
                     }
                 }
+
+                //类上的注解，只有path有效
                 HttpHandler classHttpHandler = a.getAnnotation(HttpHandler.class);
                 String path = classHttpHandler != null ? classHttpHandler.path() : "/";
                 rootRouter.mountSubRouter(path, classRouter);
@@ -219,13 +225,21 @@ public class SimpleWebApplicationImpl implements SimpleWebApplication {
     Object[] parseArgs(Parameter[] parameters, RoutingContext rc) throws RuntimeException {
         List<Object> args = new LinkedList<>();
 
-
-        //todo 不支持多值。
+        // 不支持多值。
         MultiMap params = rc.request().params();
+
         JsonObject queryObject = new JsonObject();
         params.entries().forEach(entry -> {
             queryObject.put(entry.getKey(), entry.getValue());
         });
+        String header = rc.request().getHeader("Content-Type");
+        if (header != null && header.contains("json") && rc.getBody().length() != 0) {
+            JsonObject bodyAsJson = rc.getBodyAsJson();
+            if (!bodyAsJson.isEmpty()) {
+                queryObject.mergeIn(bodyAsJson);
+            }
+        }
+
 
         for (Parameter parameter : parameters) {
             Class<?> type = parameter.getType();
@@ -237,14 +251,13 @@ public class SimpleWebApplicationImpl implements SimpleWebApplication {
             }
 
             if (!Reflection.isPrimitiveType(type)) {
-                //bean
+                //简单 bean
 
                 try {
                     Field[] declaredFields = type.getDeclaredFields();
 
-                    JsonObject allArgsJson = queryObject;
                     // 过滤多余的字段
-                    Map<String, Object> beanMap = allArgsJson.stream().filter(e -> {
+                    Map<String, Object> beanMap = queryObject.stream().filter(e -> {
                         for (Field field : declaredFields) {
                             if (e.getKey().equals(field.getName()))
                                 return true;
@@ -253,7 +266,6 @@ public class SimpleWebApplicationImpl implements SimpleWebApplication {
                     }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
                     JsonObject beanJson = new JsonObject(beanMap);
                     Object bean = beanJson.mapTo(type);
-
 
                     for (Field field : declaredFields) {
                         Param fieldAnnotation = field.getAnnotation(Param.class);
@@ -280,30 +292,36 @@ public class SimpleWebApplicationImpl implements SimpleWebApplication {
             //  简单类型
             String value = queryObject.getString(name);
             if (value == null) {
+                //看是否有默认值
                 Param param = parameter.getAnnotation(Param.class);
-                if (param == null /*|| param.request()*/) {
-                    throw new ClientException("request parameter. " + name + " null");
-                } else {
+                if (param != null) {
                     value = param.defaultValue();
+                } else {
+                    throw new ClientException("request parameter " + name + "is not allowed to be null.");
                 }
             }
 
 
+            // 不支持 基本类型
             try {
+
                 if (type.equals(String.class)) {
                     args.add(value);
                 } else if (type.equals(Integer.class)) {
-                    args.add(value.isEmpty() ? 0 : Integer.parseInt(value));
+                    args.add(value.isEmpty() ? null : Integer.parseInt(value));
                 } else if (type.equals(Short.class)) {
-                    args.add(value.isEmpty() ? 0 : Short.parseShort(value));
+                    args.add(value.isEmpty() ? null : Short.parseShort(value));
                 } else if (type.equals(Long.class)) {
-                    args.add(value.isEmpty() ? 0L : Long.parseLong(value));
+                    args.add(value.isEmpty() ? null : Long.parseLong(value));
                 } else if (type.equals(Double.class)) {
-                    args.add(value.isEmpty() ? 0L : Double.parseDouble(value));
+                    args.add(value.isEmpty() ? null : Double.parseDouble(value));
                 } else if (type.equals(Float.class)) {
-                    args.add(value.isEmpty() ? 0f : Float.parseFloat(value));
+                    args.add(value.isEmpty() ? null : Float.parseFloat(value));
+                } else if (type.equals(Boolean.class)) {
+                    args.add(value.isEmpty() ? null : Boolean.getBoolean(value));
+                } else if (type.equals(Byte.class)) {
+                    args.add(value.isEmpty() ? null : Byte.parseByte(value));
                 } else {
-                    // 完善
                     throw new RuntimeException("unsupported type." + type.getName());
                 }
             } catch (RuntimeException e) {
@@ -315,8 +333,10 @@ public class SimpleWebApplicationImpl implements SimpleWebApplication {
     }
 
     void parseReturnValue(RoutingContext rc, Object invoke, HttpHandler annotation) throws RuntimeException {
+        //在方法内处理完毕
         if (rc.response().ended())
             return;
+        //同上
         if (invoke == null) {
             rc.addBodyEndHandler(be -> {
                 if (!rc.response().ended())
@@ -325,7 +345,7 @@ public class SimpleWebApplicationImpl implements SimpleWebApplication {
         } else {
             // 根据注解，处理返回类型。
             String result = invoke.toString();
-            if (annotation.contentType().contains("application/json")) {
+            if (annotation.produce().contains("application/json")) {
                 if (invoke instanceof JsonObject || invoke instanceof String) {
                     result = invoke.toString();
                 } else if (invoke instanceof Map) {
@@ -335,20 +355,18 @@ public class SimpleWebApplicationImpl implements SimpleWebApplication {
                 } else if (invoke instanceof List) {
                     result = new JsonArray((List) invoke).toString();
                 } else {
-                    //
+                    // 尝试不支持类型
                     result = JsonObject.mapFrom(invoke).toString();
-                }
-                rc.response().putHeader("content-type", annotation.contentType()).end(result);
 
-            } else if (annotation.contentType().contains("text/html") && engine != null) {
+                }
+                rc.response().putHeader("content-type", annotation.produce()).end(result);
+
+            } else if (annotation.produce().contains("text/html") && engine != null) {
                 //html
                 TemplateEngine engine = getTemplateEngine();
-                if (engine == null){
-                    throw new RuntimeException("Template engine null.");
-                }
                 engine.render(rc.data(), "templates/" + result, ar -> {
                     if (ar.succeeded()) {
-                        rc.response().putHeader("content-type", annotation.contentType()).end(ar.result());
+                        rc.response().putHeader("content-type", annotation.produce()).end(ar.result());
                     } else {
                         logger.error("render template error. {}", ar.cause().getMessage());
                         rc.response().setStatusCode(500).end(ar.cause().getMessage());
@@ -356,7 +374,7 @@ public class SimpleWebApplicationImpl implements SimpleWebApplication {
                 });
 
             } else {
-                //text/plain
+                //默认 按 text/plain 处理
                 rc.response().putHeader("content-type", "text/plain; charset=utf-8;").end(result);
             }
 

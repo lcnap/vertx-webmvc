@@ -17,6 +17,7 @@
 package pers.lcnap.vertx.webmvc.test;
 
 import io.vertx.core.Vertx;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import pers.lcnap.vertx.webmvc.HttpHandler;
@@ -29,23 +30,27 @@ import java.time.LocalDateTime;
 public class WebApp {
 
     public static void main(String[] args) {
-        SimpleWebApplication.run(Vertx.vertx(),WebApp.class);
+        SimpleWebApplication.run(Vertx.vertx(), WebApp.class);
     }
 
-    @HttpHandler(path = "/hi",contentType = "text/plain; charset=utf-8")
-    public String hi(@Param String msg){
+    @HttpHandler(path = "/hi", produce = "text/plain; charset=utf-8")
+    public String hi(@Param String msg) {
         return "hi " + msg;
     }
 
-
-    @HttpHandler(path = "/jsonobject")
-    public JsonObject jsonObject(){
-        return new JsonObject().put("now", LocalDateTime.now().toString()).put("server","vertx").put("x","消息");
+    @HttpHandler(method = HttpMethod.POST, path = "/phi")
+    public String postHi(@Param String msg) {
+        return "hi " + msg;
     }
 
-    @HttpHandler(path = "/home",contentType = "text/html;")
-    public String home(RoutingContext routingContext){
-        routingContext.put("msg","freemarker 中文");
+    @HttpHandler(path = "/jsonobject")
+    public JsonObject jsonObject() {
+        return new JsonObject().put("now", LocalDateTime.now().toString()).put("server", "vertx").put("x", "消息");
+    }
+
+    @HttpHandler(path = "/home", produce = "text/html;")
+    public String home(RoutingContext routingContext) {
+        routingContext.put("msg", "freemarker 中文");
         return "home";
     }
 
@@ -65,6 +70,7 @@ public class WebApp {
     @HttpHandler(path = "/file")
     public void file(RoutingContext routingContext){
         routingContext.response().sendFile("file.exe");
+
 
         /*routingContext.vertx().fileSystem().readFile("",ar -> {
             if (ar.succeeded()){

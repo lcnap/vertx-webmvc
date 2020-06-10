@@ -23,7 +23,5 @@ import java.lang.annotation.*;
 @Documented
 public @interface Param {
 
-    // boolean request() default false;
-
     String defaultValue() default "";
 }

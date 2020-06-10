@@ -35,7 +35,7 @@ public class SimpleWebApplicationTest {
             SimpleWebApplication.run(Vertx.vertx(), pers.lcnap.vertx.webmvc.test.WebApp.class);
         }
 
-        @HttpHandler(path = "/hi", contentType = "text/plain; charset=utf-8")
+        @HttpHandler(path = "/hi", produce = "text/plain; charset=utf-8")
         public String hi(@Param String msg) {
             return "hi " + msg;
         }
@@ -46,7 +46,7 @@ public class SimpleWebApplicationTest {
             return new JsonObject().put("now", LocalDateTime.now().toString()).put("server", "vertx").put("x", "消息");
         }
 
-        @HttpHandler(path = "/home", contentType = "text/html;")
+        @HttpHandler(path = "/home", produce = "text/html;")
         public String home(RoutingContext routingContext) {
             routingContext.put("msg", "freemarker 中文");
             return "home";

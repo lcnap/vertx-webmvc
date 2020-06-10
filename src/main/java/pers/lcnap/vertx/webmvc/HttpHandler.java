@@ -29,9 +29,9 @@ public @interface HttpHandler {
 
     HttpMethod[] method() default {HttpMethod.GET, HttpMethod.POST};
 
-    String contentType() default "application/json; charset=utf-8";
+    String produce() default "application/json; charset=utf-8";
 
-    String consumes() default "text/html";
+    /*String consumes() default "text/html";*/
 
     boolean isBlocking() default false;
 
