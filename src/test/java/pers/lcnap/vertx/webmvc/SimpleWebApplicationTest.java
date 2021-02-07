@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 lcnap
+ * Copyright 2021 lcnap
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,6 @@ public class SimpleWebApplicationTest {
         public static void main(String[] args) {
             SimpleWebApplication.run(Vertx.vertx(), pers.lcnap.vertx.webmvc.test.WebApp.class);
         }
-
         @HttpHandler(path = "/hi", produce = "text/plain; charset=utf-8")
         public String hi(@Param String msg) {
             return "hi " + msg;

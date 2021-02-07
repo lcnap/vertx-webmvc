@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 lcnap
+ * Copyright 2021 lcnap
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -123,7 +123,7 @@ public class SimpleWebApplicationImpl implements SimpleWebApplication {
 
 
         String templateEngineClass = DEFAULT_TEMPLATE_ENGINE;
-        if (!(config.getString("templateEngine") == null)){
+        if (!(config.getString("templateEngine") == null)) {
             templateEngineClass = config.getString("templateEngine");
         }
         initEngine(templateEngineClass);
@@ -182,7 +182,7 @@ public class SimpleWebApplicationImpl implements SimpleWebApplication {
                                 //after
                                 parseReturnValue(rc, invoke, annotation);
                             } catch (Exception e) {
-                                throw new RuntimeException(e.getCause());
+                                throw new RuntimeException(e);
                             }
 
                         };
@@ -289,7 +289,7 @@ public class SimpleWebApplicationImpl implements SimpleWebApplication {
             }
 
 
-            //  简单类型
+            //  基本类型
             String value = queryObject.getString(name);
             if (value == null) {
                 //看是否有默认值
@@ -301,32 +301,26 @@ public class SimpleWebApplicationImpl implements SimpleWebApplication {
                 }
             }
 
-
-            // 不支持 基本类型
-            try {
-
-                if (type.equals(String.class)) {
-                    args.add(value);
-                } else if (type.equals(Integer.class)) {
-                    args.add(value.isEmpty() ? null : Integer.parseInt(value));
-                } else if (type.equals(Short.class)) {
-                    args.add(value.isEmpty() ? null : Short.parseShort(value));
-                } else if (type.equals(Long.class)) {
-                    args.add(value.isEmpty() ? null : Long.parseLong(value));
-                } else if (type.equals(Double.class)) {
-                    args.add(value.isEmpty() ? null : Double.parseDouble(value));
-                } else if (type.equals(Float.class)) {
-                    args.add(value.isEmpty() ? null : Float.parseFloat(value));
-                } else if (type.equals(Boolean.class)) {
-                    args.add(value.isEmpty() ? null : Boolean.getBoolean(value));
-                } else if (type.equals(Byte.class)) {
-                    args.add(value.isEmpty() ? null : Byte.parseByte(value));
-                } else {
-                    throw new RuntimeException("unsupported type." + type.getName());
-                }
-            } catch (RuntimeException e) {
-                throw new ClientException("parse parameters error." + e.getMessage());
+            if (type.equals(String.class)) {
+                args.add(value);
+            } else if (type.equals(Integer.class) || type.equals(int.class)) {
+                args.add(value.isEmpty() ? null : Integer.parseInt(value));
+            } else if (type.equals(Short.class) || type.equals(short.class)) {
+                args.add(value.isEmpty() ? null : Short.parseShort(value));
+            } else if (type.equals(Long.class) || type.equals(long.class)) {
+                args.add(value.isEmpty() ? null : Long.parseLong(value));
+            } else if (type.equals(Double.class) || type.equals(double.class)) {
+                args.add(value.isEmpty() ? null : Double.parseDouble(value));
+            } else if (type.equals(Float.class) || type.equals(float.class)) {
+                args.add(value.isEmpty() ? null : Float.parseFloat(value));
+            } else if (type.equals(Boolean.class) || type.equals(boolean.class)) {
+                args.add(value.isEmpty() ? null : Boolean.getBoolean(value));
+            } else if (type.equals(Byte.class) || type.equals(byte.class)) {
+                args.add(value.isEmpty() ? null : Byte.parseByte(value));
+            } else {
+                throw new ClientException("unsupported type:" + type.getName() + ":" + name + ":" + value);
             }
+
 
         }
         return args.toArray();

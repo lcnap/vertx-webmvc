@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 lcnap
+ * Copyright 2021 lcnap
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,14 @@ public class Reflection {
         primitiveType.add(Float.class);
         primitiveType.add(Long.class);
         primitiveType.add(String.class);
+
+        primitiveType.add(boolean.class);
+        primitiveType.add(byte.class);
+        primitiveType.add(int.class);
+        primitiveType.add(short.class);
+        primitiveType.add(double.class);
+        primitiveType.add(float.class);
+        primitiveType.add(long.class);
     }
 
     public static Set<Class<?>> findHandlerClass(String pkg) throws Exception {

@@ -1,7 +1,7 @@
 {
-  "port": 8081,
+  "port": 8080,
   "templateEngine": "io.vertx.ext.web.templ.freemarker.FreeMarkerTemplateEngine"
-/*
-  "templateEngine": "io.vertx.ext.web.templ.ThymeleafTemplateEngine"
-*/
+  /*
+    "templateEngine": "io.vertx.ext.web.templ.ThymeleafTemplateEngine"
+  */
 }
