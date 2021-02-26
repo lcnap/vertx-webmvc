@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 lcnap
+ * Copyright 2021 lcnap
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,14 @@
 
 package pers.lcnap.vertx.webmvc;
 
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServer;
 import pers.lcnap.vertx.webmvc.impl.SimpleWebApplicationImpl;
 
 public interface SimpleWebApplication {
 
-    static HttpServer run(Vertx vertx, Class<?> appClass) throws RuntimeException {
+    static Future<HttpServer> run(Vertx vertx, Class<?> appClass) throws RuntimeException {
         return new SimpleWebApplicationImpl(vertx, appClass).run();
     }
 }

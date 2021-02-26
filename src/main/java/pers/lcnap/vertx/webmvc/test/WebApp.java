@@ -17,10 +17,12 @@
 package pers.lcnap.vertx.webmvc.test;
 
 import io.vertx.core.Vertx;
-import io.vertx.core.http.HttpMethod;
+import io.vertx.core.VertxOptions;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
+import io.vertx.tracing.opentracing.OpenTracingOptions;
 import pers.lcnap.vertx.webmvc.HttpHandler;
+import pers.lcnap.vertx.webmvc.HttpMethod;
 import pers.lcnap.vertx.webmvc.Param;
 import pers.lcnap.vertx.webmvc.SimpleWebApplication;
 
@@ -30,7 +32,12 @@ import java.time.LocalDateTime;
 public class WebApp {
 
     public static void main(String[] args) {
-        SimpleWebApplication.run(Vertx.vertx(), WebApp.class);
+     /*   SimpleWebApplication.run(Vertx.vertx(new VertxOptions().setMetricsOptions(
+                new DropwizardMetricsOptions().setJmxEnabled(true)
+        )), WebApp.class);  */
+        SimpleWebApplication.run(Vertx.vertx(new VertxOptions().setTracingOptions(
+                new OpenTracingOptions()
+        )), WebApp.class);
     }
 
     @HttpHandler(path = "/int", produce = "text/plain; charset=utf-8")

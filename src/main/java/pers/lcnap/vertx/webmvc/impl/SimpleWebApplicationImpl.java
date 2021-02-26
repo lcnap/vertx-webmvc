@@ -17,11 +17,11 @@
 package pers.lcnap.vertx.webmvc.impl;
 
 
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.json.JsonArray;
@@ -36,10 +36,7 @@ import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.handler.LoggerFormat;
 import io.vertx.ext.web.handler.LoggerHandler;
 import io.vertx.ext.web.handler.StaticHandler;
-import pers.lcnap.vertx.webmvc.ClientException;
-import pers.lcnap.vertx.webmvc.HttpHandler;
-import pers.lcnap.vertx.webmvc.Param;
-import pers.lcnap.vertx.webmvc.SimpleWebApplication;
+import pers.lcnap.vertx.webmvc.*;
 import pers.lcnap.vertx.webmvc.utils.Reflection;
 
 import java.lang.reflect.Constructor;
@@ -73,7 +70,7 @@ public class SimpleWebApplicationImpl implements SimpleWebApplication {
         this.appClass = appClass;
     }
 
-    public HttpServer run() throws RuntimeException {
+    public Future<HttpServer> run() throws RuntimeException {
         HttpServerOptions serverOptions = readConfigFile();
 
         httpServer = vertx.createHttpServer(serverOptions);
@@ -97,10 +94,9 @@ public class SimpleWebApplicationImpl implements SimpleWebApplication {
 
         scanHttpHandler();
 
-        HttpServer server = httpServer.requestHandler(rootRouter).listen();
-        logger.info("server start.");
+        Future<HttpServer> listen = httpServer.requestHandler(rootRouter).listen();
 
-        return server;
+        return listen;
     }
 
     private HttpServerOptions readConfigFile() {
@@ -195,7 +191,9 @@ public class SimpleWebApplicationImpl implements SimpleWebApplication {
                         if (httpMethods.length != 1) {
                             route = classRouter.route(path);
                         } else {
-                            route = classRouter.route(httpMethods[0], path);
+                            route = classRouter.route(
+                                    io.vertx.core.http.HttpMethod.valueOf(String.valueOf(httpMethods[0])),
+                                    path);
                         }
 
 

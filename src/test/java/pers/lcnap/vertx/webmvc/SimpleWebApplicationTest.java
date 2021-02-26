@@ -16,15 +16,15 @@
 
 package pers.lcnap.vertx.webmvc;
 
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
+import io.vertx.core.http.HttpServer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
-
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @DisplayName("简单测试")
 public class SimpleWebApplicationTest {
@@ -81,12 +81,12 @@ public class SimpleWebApplicationTest {
 
     @Test
     public void run1() {
-        assertNotNull(SimpleWebApplication.run(Vertx.vertx(), SimpleWebApplication.class));
+        Future<HttpServer> run = SimpleWebApplication.run(Vertx.vertx(), SimpleWebApplication.class);
     }
 
     @Test
     public void run2() {
-        assertNotNull(SimpleWebApplication.run(Vertx.vertx(), WebApp.class));
+        SimpleWebApplication.run(Vertx.vertx(), WebApp.class);
     }
 
 }
