@@ -14,16 +14,28 @@
  * limitations under the License.
  */
 
-package pers.lcnap.vertx.webmvc;
+package pers.lcnap.vertx.webmvc.handler;
 
-import io.vertx.core.Future;
-import io.vertx.core.Vertx;
-import io.vertx.core.http.HttpServer;
-import pers.lcnap.vertx.webmvc.impl.SimpleWebApplicationImpl;
+import io.vertx.core.Handler;
+import io.vertx.ext.web.RoutingContext;
+import org.slf4j.MDC;
 
-public interface SimpleWebApplication {
+import java.util.UUID;
 
-    static Future<HttpServer> run(Vertx vertx, Class<?> appClass) throws RuntimeException {
-        return new SimpleWebApplicationImpl(vertx, appClass).run();
+/**
+ * requestID生成
+ */
+public class RequestIdHandler implements Handler<RoutingContext> {
+
+    @Override
+    public void handle(RoutingContext rc) {
+        String id = UUID.randomUUID().toString();
+        MDC.put("requestId", id);
+        rc.response().putHeader("x-request-id", id);
+        rc.next();
+    }
+
+    public static RequestIdHandler create() {
+        return new RequestIdHandler();
     }
 }

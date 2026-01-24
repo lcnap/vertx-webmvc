@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright 2026 lcnap
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<configuration scan="true" scanPeriod="60 seconds" debug="false">
+    <!-- 1. 变量定义（方便统一维护） -->
+    <property name="LOG_HOME" value="./logs"/> <!-- 日志根目录（${user.dir} 是当前项目路径） -->
+    <property name="LOG_NAME" value="app"/>             <!-- 日志基础名称（如 app.log） -->
+    <property name="CONSOLE_PATTERN"
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%X{requestId}] %-5level %logger{36} - %msg%n"/> <!-- 控制台日志格式 -->
+    <property name="FILE_PATTERN"
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%X{requestId}] %-5level %logger{36} - %msg%n"/>       <!-- 文件日志格式 -->
+
+    <!-- 2. 控制台输出 Appender（开发环境用） -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${CONSOLE_PATTERN}</pattern>
+            <charset>UTF-8</charset> <!-- 避免中文乱码 -->
+        </encoder>
+    </appender>
+
+    <!-- 3. 滚动文件输出 Appender（生产环境用，按时间+大小分割） -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/${LOG_NAME}.log</file> <!-- 当前正在写入的日志文件 -->
+
+        <!-- 滚动策略：按时间（每天）+ 大小（100MB）分割，保留30天历史 -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/${LOG_NAME}.%d{yyyy-MM-dd}.%i.log.gz
+            </fileNamePattern> <!-- 归档文件格式（.gz 自动压缩） -->
+            <maxFileSize>100MB</maxFileSize>       <!-- 单个文件最大100MB -->
+            <maxHistory>30</maxHistory>            <!-- 保留30天的历史日志 -->
+            <totalSizeCap>500MB</totalSizeCap>      <!-- 所有日志总大小不超过1GB（防止磁盘占满） -->
+        </rollingPolicy>
+
+        <encoder>
+            <pattern>${FILE_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- 4. 根日志配置（全局默认） -->
+    <root level="INFO"> <!-- 全局日志级别：INFO（只输出 INFO 及以上级别） -->
+        <appender-ref ref="CONSOLE"/> <!-- 输出到控制台 -->
+        <appender-ref ref="FILE" level="WARN"/>     <!-- 输出到文件 -->
+    </root>
+
+    <!-- 5. 特定包/类的日志级别（可选，覆盖根配置） -->
+    <logger name="com.example.demo" level="DEBUG" additivity="false">
+        <!-- 对 com.example.demo 包下的类，日志级别设为 DEBUG（更详细） -->
+        <!-- additivity="false"：避免日志重复输出（不传递到 root） -->
+        <appender-ref ref="FILE"/>
+    </logger>
+</configuration>

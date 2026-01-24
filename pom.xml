@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2021 lcnap
+  ~ Copyright 2026 lcnap
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@
     <version>1.0-SNAPSHOT</version>
 
     <properties>
-        <vertx.version>4.0.2</vertx.version>
+        <vertx.version>5.0.7</vertx.version>
     </properties>
 
 
@@ -67,6 +67,19 @@
             <groupId>io.vertx</groupId>
             <artifactId>vertx-opentracing</artifactId>
             <version>${vertx.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>1.5.13</version>
+        </dependency>
+
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.16.1</version>
         </dependency>
 
 
