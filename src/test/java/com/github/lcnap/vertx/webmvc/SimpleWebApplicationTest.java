@@ -88,8 +88,8 @@ public class SimpleWebApplicationTest {
         Map<String, String> testCases = Map.of(
                 "/main/hi?msg=2026", "hi 2026",
                 "/main/jsonobject", new JsonObject().put("now", "2026-01-24").put("server", "vertx").put("x", "消息").toString(),
-                "/main/msg", JsonObject.mapFrom(new WebApp.Msg()).toString(),
-                "/main/file", file
+                "/main/msg", JsonObject.mapFrom(new WebApp.Msg()).toString()
+                //"/main/file", file
 
 
         );

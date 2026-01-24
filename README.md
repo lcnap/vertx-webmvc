@@ -7,11 +7,10 @@
 #### 使用
 
 ```xml
-
 <dependency>
-    <groupId>io.vertx</groupId>
-    <artifactId>vertx-web</artifactId>
-    <version>${vertx.version}</version>
+    <groupId>com.github.lcnap</groupId>
+    <artifactId>vertx-webmvc</artifactId>
+    <version>1.0-SNAPSHOT</version>
 </dependency>
 ```
 

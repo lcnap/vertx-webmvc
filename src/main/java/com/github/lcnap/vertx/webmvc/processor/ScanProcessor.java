@@ -29,7 +29,6 @@ import io.vertx.ext.web.Route;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.common.template.TemplateEngine;
-import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -101,7 +100,7 @@ public class ScanProcessor {
         }
     }
 
-    private @NonNull Handler<RoutingContext> proxyHandler(Class<?> a, Method method, HttpHandler annotation) throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
+    private Handler<RoutingContext> proxyHandler(Class<?> a, Method method, HttpHandler annotation) throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
         Parameter[] parameters = method.getParameters();
 
         Constructor<?> declaredConstructor = a.getDeclaredConstructor();
