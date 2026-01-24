@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 lcnap
+ * Copyright 2026 lcnap
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,4 +14,10 @@
  * limitations under the License.
  */
 
-package pers.lcnap.vertx.webmvc;
+package com.github.lcnap.vertx.webmvc;
+
+public class ServerException extends RuntimeException {
+    public ServerException(String s) {
+        super(s);
+    }
+}

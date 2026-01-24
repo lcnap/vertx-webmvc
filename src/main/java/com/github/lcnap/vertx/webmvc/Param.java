@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 lcnap
+ * Copyright 2026 lcnap
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,10 +14,14 @@
  * limitations under the License.
  */
 
-package pers.lcnap.vertx.webmvc;
+package com.github.lcnap.vertx.webmvc;
 
-public class ClientException extends RuntimeException {
-    public ClientException(String s) {
-        super(s);
-    }
+import java.lang.annotation.*;
+
+@Target({ElementType.PARAMETER, ElementType.FIELD})
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+public @interface Param {
+
+    String defaultValue() default "";
 }

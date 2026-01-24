@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
-package pers.lcnap.vertx.webmvc.processor;
+package com.github.lcnap.vertx.webmvc.processor;
 
+import com.github.lcnap.vertx.webmvc.*;
+import com.github.lcnap.vertx.webmvc.impl.SimpleWebApplicationImpl;
+import com.github.lcnap.vertx.webmvc.utils.Reflection;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -29,9 +32,6 @@ import io.vertx.ext.web.common.template.TemplateEngine;
 import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import pers.lcnap.vertx.webmvc.*;
-import pers.lcnap.vertx.webmvc.impl.SimpleWebApplicationImpl;
-import pers.lcnap.vertx.webmvc.utils.Reflection;
 
 import java.lang.reflect.*;
 import java.util.*;

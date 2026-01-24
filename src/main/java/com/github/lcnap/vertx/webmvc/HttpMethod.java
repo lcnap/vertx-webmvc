@@ -14,16 +14,8 @@
  * limitations under the License.
  */
 
-package pers.lcnap.vertx.webmvc;
+package com.github.lcnap.vertx.webmvc;
 
-import io.vertx.core.Future;
-import io.vertx.core.Vertx;
-import io.vertx.core.http.HttpServer;
-import pers.lcnap.vertx.webmvc.impl.SimpleWebApplicationImpl;
-
-public interface SimpleWebApplication {
-
-    static Future<HttpServer> run(Vertx vertx, Class<?> appClass) throws RuntimeException {
-        return new SimpleWebApplicationImpl(vertx, appClass).run();
-    }
+public enum HttpMethod {
+    GET, POST
 }

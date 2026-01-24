@@ -4,6 +4,17 @@
 
 基于vertx-web的SpringMVC风格的框架。
 
+#### 使用
+
+```xml
+
+<dependency>
+    <groupId>io.vertx</groupId>
+    <artifactId>vertx-web</artifactId>
+    <version>${vertx.version}</version>
+</dependency>
+```
+
 #### 启动
 直接通过接口启动即可。appClass 要在最顶层。
 ```

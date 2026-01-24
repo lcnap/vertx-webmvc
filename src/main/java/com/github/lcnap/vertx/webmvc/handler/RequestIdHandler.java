@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package pers.lcnap.vertx.webmvc.handler;
+package com.github.lcnap.vertx.webmvc.handler;
 
 import io.vertx.core.Handler;
 import io.vertx.ext.web.RoutingContext;

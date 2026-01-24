@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package pers.lcnap.vertx.webmvc;
+package com.github.lcnap.vertx.webmvc;
 
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;

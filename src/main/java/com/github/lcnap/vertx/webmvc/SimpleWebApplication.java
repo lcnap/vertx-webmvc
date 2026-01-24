@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 lcnap
+ * Copyright 2026 lcnap
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,8 +14,16 @@
  * limitations under the License.
  */
 
-package pers.lcnap.vertx.webmvc;
+package com.github.lcnap.vertx.webmvc;
 
-public enum HttpMethod {
-    GET, POST
+import com.github.lcnap.vertx.webmvc.impl.SimpleWebApplicationImpl;
+import io.vertx.core.Future;
+import io.vertx.core.Vertx;
+import io.vertx.core.http.HttpServer;
+
+public interface SimpleWebApplication {
+
+    static Future<HttpServer> run(Vertx vertx, Class<?> appClass) throws RuntimeException {
+        return new SimpleWebApplicationImpl(vertx, appClass).run();
+    }
 }

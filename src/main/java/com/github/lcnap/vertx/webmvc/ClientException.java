@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 lcnap
+ * Copyright 2026 lcnap
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,24 +14,10 @@
  * limitations under the License.
  */
 
-package pers.lcnap.vertx.webmvc;
+package com.github.lcnap.vertx.webmvc;
 
-
-import java.lang.annotation.*;
-
-@Target({ElementType.METHOD, ElementType.TYPE})
-@Retention(RetentionPolicy.RUNTIME)
-@Documented
-public @interface HttpHandler {
-
-    String path();
-
-    HttpMethod[] method() default {HttpMethod.GET, HttpMethod.POST};
-
-    String produce() default "application/json; charset=utf-8";
-
-    /*String consumes() default "text/html";*/
-
-    boolean isBlocking() default false;
-
+public class ClientException extends RuntimeException {
+    public ClientException(String s) {
+        super(s);
+    }
 }

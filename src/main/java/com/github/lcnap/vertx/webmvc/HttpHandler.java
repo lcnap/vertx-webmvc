@@ -14,10 +14,24 @@
  * limitations under the License.
  */
 
-package pers.lcnap.vertx.webmvc;
+package com.github.lcnap.vertx.webmvc;
 
-public class ServerException extends RuntimeException {
-    public ServerException(String s) {
-        super(s);
-    }
+
+import java.lang.annotation.*;
+
+@Target({ElementType.METHOD, ElementType.TYPE})
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+public @interface HttpHandler {
+
+    String path();
+
+    HttpMethod[] method() default {HttpMethod.GET, HttpMethod.POST};
+
+    String produce() default "application/json; charset=utf-8";
+
+    /*String consumes() default "text/html";*/
+
+    boolean isBlocking() default false;
+
 }

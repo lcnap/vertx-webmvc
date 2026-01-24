@@ -14,9 +14,13 @@
  * limitations under the License.
  */
 
-package pers.lcnap.vertx.webmvc.impl;
+package com.github.lcnap.vertx.webmvc.impl;
 
 
+import com.github.lcnap.vertx.webmvc.ClientException;
+import com.github.lcnap.vertx.webmvc.SimpleWebApplication;
+import com.github.lcnap.vertx.webmvc.handler.RequestIdHandler;
+import com.github.lcnap.vertx.webmvc.processor.ScanProcessor;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -31,10 +35,6 @@ import io.vertx.ext.web.handler.LoggerHandler;
 import io.vertx.ext.web.handler.StaticHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import pers.lcnap.vertx.webmvc.ClientException;
-import pers.lcnap.vertx.webmvc.SimpleWebApplication;
-import pers.lcnap.vertx.webmvc.handler.RequestIdHandler;
-import pers.lcnap.vertx.webmvc.processor.ScanProcessor;
 
 import java.lang.reflect.Method;
 
