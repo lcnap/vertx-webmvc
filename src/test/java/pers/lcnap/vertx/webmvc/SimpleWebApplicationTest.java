@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 lcnap
+ * Copyright 2026 lcnap
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,19 +21,26 @@ import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
+import io.vertx.ext.web.client.WebClient;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.time.LocalDateTime;
+import java.util.Map;
 
 @DisplayName("简单测试")
 public class SimpleWebApplicationTest {
+    final static Logger logger = LoggerFactory.getLogger(SimpleWebApplicationTest.class);
+
     @HttpHandler(path = "/main")
     public static class WebApp {
 
         public static void main(String[] args) {
-            SimpleWebApplication.run(Vertx.vertx(), pers.lcnap.vertx.webmvc.test.WebApp.class);
+            SimpleWebApplication.run(Vertx.vertx(), WebApp.class);
         }
+
         @HttpHandler(path = "/hi", produce = "text/plain; charset=utf-8")
         public String hi(@Param String msg) {
             return "hi " + msg;
@@ -42,12 +49,14 @@ public class SimpleWebApplicationTest {
 
         @HttpHandler(path = "/jsonobject")
         public JsonObject jsonObject() {
-            return new JsonObject().put("now", LocalDateTime.now().toString()).put("server", "vertx").put("x", "消息");
+            return new JsonObject().put("now", "2026-01-24").put("server", "vertx").put("x", "消息");
         }
 
         @HttpHandler(path = "/home", produce = "text/html;")
         public String home(RoutingContext routingContext) {
             routingContext.put("msg", "freemarker 中文");
+            routingContext.put("code", "300");
+            routingContext.put("title", "testcase");
             return "home";
         }
 
@@ -61,32 +70,57 @@ public class SimpleWebApplicationTest {
         static class Msg {
             public String code = "xx";
             public String content = "xxx";
-            public String date = LocalDateTime.now().toString();
+            public String date = "2026-01-24";
         }
 
         @HttpHandler(path = "/file")
         public void file(RoutingContext routingContext) {
-            routingContext.response().sendFile("file.exe");
-
-        /*routingContext.vertx().fileSystem().readFile("",ar -> {
-            if (ar.succeeded()){
-                routingContext.response().end(ar.result());
-            } else {
-                routingContext.response().end(ar.cause().getMessage());
-            }
-        });*/
+            routingContext.response().sendFile("file");
         }
     }
 
 
     @Test
     public void run1() {
-        Future<HttpServer> run = SimpleWebApplication.run(Vertx.vertx(), SimpleWebApplication.class);
-    }
+        Vertx vertx = Vertx.vertx();
+        int port = 8081;
+        String file = vertx.fileSystem().readFileBlocking("file").toString();
+        Map<String, String> testCases = Map.of(
+                "/main/hi?msg=2026", "hi 2026",
+                "/main/jsonobject", new JsonObject().put("now", "2026-01-24").put("server", "vertx").put("x", "消息").toString(),
+                "/main/msg", JsonObject.mapFrom(new WebApp.Msg()).toString(),
+                "/main/file", file
 
-    @Test
-    public void run2() {
-        SimpleWebApplication.run(Vertx.vertx(), WebApp.class);
+
+        );
+        Future<HttpServer> run = SimpleWebApplication.run(vertx, SimpleWebApplication.class);
+
+        run.onSuccess(server -> {
+            WebClient client = WebClient.create(vertx);
+            testCases.forEach((k, v) -> {
+                logger.info("testcase: path: {};want: {}", k, v);
+                client.get(port, "localhost", k)
+                        .send()
+                        .onSuccess(resp -> {
+                            if (resp.statusCode() >= 300) {
+                                Assertions.fail(resp.statusMessage());
+                            }
+                            if (resp.headers().get("Content-Type").contains("json")) {
+                                Assertions.assertEquals(v, resp.bodyAsJsonObject().toString());
+                            } else {
+                                Assertions.assertEquals(v, resp.bodyAsString());
+                            }
+                        })
+                        .onFailure(resp -> {
+                            Assertions.fail(resp.getMessage());
+                        });
+
+            });
+        }).onFailure(ex -> {
+            Assertions.fail(ex.getMessage());
+        });
+        run.await();
+
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 lcnap
+ * Copyright 2026 lcnap
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,7 +66,7 @@ public class Reflection {
                 pathname -> pathname.isDirectory() || pathname.getName().endsWith(".class")
         );
 
-        if (files == null || files.length == 0) {
+        if (files == null) {
             return classSet;
         }
 
@@ -74,23 +74,21 @@ public class Reflection {
         for (File f : files) {
             if (f.isDirectory()) {
                 Set<Class<?>> subDirClass = findHandlerClass(pkg + "." + f.getName());
-                if (subDirClass.size() != 0) {
+                if (!subDirClass.isEmpty()) {
                     classSet.addAll(subDirClass);
                 }
             } else {
                 String className = f.getName().replace(".class", "");
                 Class<?> clazz = Class.forName(pkg + "." + className);
-                if (clazz != null) {
-                    Method[] declaredMethods = clazz.getDeclaredMethods();
-                    for (Method method : declaredMethods) {
-                        HttpHandler annotation = method.getAnnotation(HttpHandler.class);
-                        if (annotation != null) {
-                            classSet.add(clazz);
-                            break;
-                        }
+                Method[] declaredMethods = clazz.getDeclaredMethods();
+                for (Method method : declaredMethods) {
+                    HttpHandler annotation = method.getAnnotation(HttpHandler.class);
+                    if (annotation != null) {
+                        classSet.add(clazz);
+                        break;
                     }
-
                 }
+
             }
         }
 

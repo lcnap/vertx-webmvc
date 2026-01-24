@@ -26,21 +26,19 @@ import io.vertx.ext.web.Route;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.common.template.TemplateEngine;
+import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pers.lcnap.vertx.webmvc.*;
 import pers.lcnap.vertx.webmvc.impl.SimpleWebApplicationImpl;
 import pers.lcnap.vertx.webmvc.utils.Reflection;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
+import java.lang.reflect.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class ScanProcessor {
-    private final static Logger logger = LoggerFactory.getLogger(SimpleWebApplicationImpl.class);
+    private final static Logger logger = LoggerFactory.getLogger(ScanProcessor.class);
 
     SimpleWebApplicationImpl application;
 
@@ -64,31 +62,7 @@ public class ScanProcessor {
                     HttpHandler annotation = method.getAnnotation(HttpHandler.class);
                     if (annotation != null) {
                         //todo 解析方法所需参数。
-                        Parameter[] parameters = method.getParameters();
-
-                        Constructor<?> declaredConstructor = a.getDeclaredConstructor();
-                        Object o = declaredConstructor.newInstance();
-
-                        Handler<RoutingContext> handler = rc -> {
-                            try {
-                                //before
-                                Object[] args = parseArgs(parameters, rc);
-                                //handler
-                                checkArg(args);
-                                Object invoke = method.invoke(o, args);
-                                //after
-                                parseReturnValue(rc, invoke, annotation);
-                            } catch (ClientException e) {
-                                throw e;
-                            } catch (ServerException e) {
-                                logger.error(e.getMessage());
-                                throw e;
-                            } catch (Exception e) {
-                                logger.error(e.getMessage());
-                                throw new RuntimeException(e);
-                            }
-
-                        };
+                        Handler<RoutingContext> handler = proxyHandler(a, method, annotation);
 
                         String path = annotation.path();
                         HttpMethod[] httpMethods = annotation.method();
@@ -127,6 +101,35 @@ public class ScanProcessor {
         }
     }
 
+    private @NonNull Handler<RoutingContext> proxyHandler(Class<?> a, Method method, HttpHandler annotation) throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
+        Parameter[] parameters = method.getParameters();
+
+        Constructor<?> declaredConstructor = a.getDeclaredConstructor();
+        Object o = declaredConstructor.newInstance();
+
+        Handler<RoutingContext> handler = rc -> {
+            try {
+                //before
+                Object[] args = parseArgs(parameters, rc);
+                //handler
+                checkArg(args);
+                Object invoke = method.invoke(o, args);
+                //after
+                parseReturnValue(rc, invoke, annotation);
+            } catch (ClientException e) {
+                throw e;
+            } catch (ServerException e) {
+                logger.error(e.getMessage());
+                throw e;
+            } catch (Exception e) {
+                logger.error(e.getMessage());
+                throw new RuntimeException(e);
+            }
+
+        };
+        return handler;
+    }
+
     void checkArg(Object[] args) {
         for (Object o : args) {
             if (o != null) {
@@ -143,9 +146,7 @@ public class ScanProcessor {
         MultiMap params = rc.request().params();
 
         JsonObject queryObject = new JsonObject();
-        params.entries().forEach(entry -> {
-            queryObject.put(entry.getKey(), entry.getValue());
-        });
+        params.entries().forEach(entry -> queryObject.put(entry.getKey(), entry.getValue()));
 
         String header = rc.request().getHeader("Content-Type");
 
@@ -288,6 +289,7 @@ public class ScanProcessor {
                 TemplateEngine engine = this.application.getTemplateEngine();
                 if (engine == null) {
                     renderPlain(rc, result);
+                    return;
                 }
                 Future<Buffer> render = engine.render(rc.data(), "templates/" + result);
                 if (render.failed()) {

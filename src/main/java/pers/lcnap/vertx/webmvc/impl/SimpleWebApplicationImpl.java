@@ -41,9 +41,9 @@ import java.lang.reflect.Method;
 public class SimpleWebApplicationImpl implements SimpleWebApplication {
     private final static Logger logger = LoggerFactory.getLogger(SimpleWebApplicationImpl.class);
 
-    private String httpServerConfig = "http-server.json";
+    private final static String httpServerConfig = "http-server.json";
 
-    private final String DEFAULT_TEMPLATE_ENGINE = "io.vertx.ext.web.templ.freemarker.FreeMarkerTemplateEngine";
+    private final static String DEFAULT_TEMPLATE_ENGINE = "io.vertx.ext.web.templ.freemarker.FreeMarkerTemplateEngine";
 
     public Class<?> appClass() {
         return appClass;
@@ -69,13 +69,9 @@ public class SimpleWebApplicationImpl implements SimpleWebApplication {
         return serverOptions;
     }
 
-    public String httpServerConfig() {
-        return httpServerConfig;
-    }
+    private final Class<?> appClass;
 
-    private Class<?> appClass;
-
-    private Vertx vertx;
+    private final Vertx vertx;
 
     private HttpServer httpServer;
 
@@ -85,7 +81,7 @@ public class SimpleWebApplicationImpl implements SimpleWebApplication {
 
     private HttpServerOptions serverOptions;
 
-    private ScanProcessor scanProcessor;
+    private final ScanProcessor scanProcessor;
 
     public SimpleWebApplicationImpl(Vertx vertx, Class<?> appClass) {
         this.vertx = vertx;
@@ -121,6 +117,10 @@ public class SimpleWebApplicationImpl implements SimpleWebApplication {
         this.scanProcessor.scanHttpHandler();
 
         Future<HttpServer> listen = httpServer.requestHandler(rootRouter).listen();
+        listen.onFailure(f -> {
+            logger.error(f.getMessage());
+        });
+
 
         return listen;
     }
@@ -133,7 +133,8 @@ public class SimpleWebApplicationImpl implements SimpleWebApplication {
             config = new JsonObject(buffer);
             logger.info(config.toString());
         } catch (Exception e) {
-            logger.info(e.getMessage());
+            logger.error(e.getMessage());
+            logger.info("use default config");
             serverOptions = new HttpServerOptions();
         }
 
@@ -143,9 +144,8 @@ public class SimpleWebApplicationImpl implements SimpleWebApplication {
             serverOptions = new HttpServerOptions(config);
         }
 
-
-        String templateEngineClass = DEFAULT_TEMPLATE_ENGINE;
-        if (!(config.getString("templateEngine") == null)) {
+        String templateEngineClass = null;
+        if (config != null) {
             templateEngineClass = config.getString("templateEngine");
         }
         initEngine(templateEngineClass);
@@ -154,7 +154,7 @@ public class SimpleWebApplicationImpl implements SimpleWebApplication {
 
     private void initEngine(String className) {
         if (className == null) {
-            return;
+            className = DEFAULT_TEMPLATE_ENGINE;
         }
         if (engine == null) {
             try {
@@ -165,6 +165,7 @@ public class SimpleWebApplicationImpl implements SimpleWebApplication {
                 Method create = aClass.getDeclaredMethod("create", Vertx.class);
                 engine = (TemplateEngine) create.invoke(aClass, vertx);
             } catch (Exception e) {
+                logger.error(e.getMessage());
                 throw new RuntimeException(e);
             }
         }
