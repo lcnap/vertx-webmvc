@@ -20,24 +20,28 @@ import io.vertx.core.Handler;
 import io.vertx.ext.web.RoutingContext;
 import org.slf4j.MDC;
 
-import java.util.UUID;
+import java.util.Map;
 
 /**
- * requestID生成
+ * 在异步线程和阻塞线程池之间分享MDC
  */
-public class RequestIdHandler implements Handler<RoutingContext> {
+public class ShareMdcBlockingHandlerWrapper implements Handler<RoutingContext> {
+    private Handler<RoutingContext> innerHandler;
+
+    public ShareMdcBlockingHandlerWrapper(Handler<RoutingContext> innerHandler) {
+        this.innerHandler = innerHandler;
+    }
+
+    public static ShareMdcBlockingHandlerWrapper create(Handler<RoutingContext> innerHandler) {
+        return new ShareMdcBlockingHandlerWrapper(innerHandler);
+    }
 
     @Override
     public void handle(RoutingContext rc) {
-        String id = UUID.randomUUID().toString();
-        MDC.put("requestId", id);
-        rc.put("mdc", MDC.getCopyOfContextMap());
-        rc.response().putHeader("x-request-id", id);
-        rc.next();
-        MDC.remove("requestId");
+        Map<String, String> mdc = rc.get("mdc");
+        MDC.setContextMap(mdc);
+        innerHandler.handle(rc);
+        MDC.clear();
     }
 
-    public static RequestIdHandler create() {
-        return new RequestIdHandler();
-    }
 }

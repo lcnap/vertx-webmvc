@@ -14,14 +14,10 @@
  * limitations under the License.
  */
 
-package com.github.lcnap.vertx.webmvc;
+package com.github.lcnap.vertx.webmvc.rule;
 
-public class ClientException extends RuntimeException {
-    public ClientException(String s) {
-        super(s);
-    }
+public interface RuleChecker<T> {
 
-    public ClientException(String s, Throwable throwable) {
-        super(s, throwable);
-    }
+    boolean exec(String rules, T value);
+
 }

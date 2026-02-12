@@ -18,9 +18,9 @@ package com.github.lcnap.vertx.webmvc.impl;
 
 
 import com.github.lcnap.vertx.webmvc.ClientException;
-import com.github.lcnap.vertx.webmvc.SimpleWebApplication;
+import com.github.lcnap.vertx.webmvc.WebApplication;
+import com.github.lcnap.vertx.webmvc.annotation.AnnotationScanner;
 import com.github.lcnap.vertx.webmvc.handler.RequestIdHandler;
-import com.github.lcnap.vertx.webmvc.processor.ScanProcessor;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -38,8 +38,8 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Method;
 
-public class SimpleWebApplicationImpl implements SimpleWebApplication {
-    private final static Logger logger = LoggerFactory.getLogger(SimpleWebApplicationImpl.class);
+public class WebApplicationImpl implements WebApplication {
+    private final static Logger logger = LoggerFactory.getLogger(WebApplicationImpl.class);
 
     private final static String httpServerConfig = "http-server.json";
 
@@ -81,13 +81,13 @@ public class SimpleWebApplicationImpl implements SimpleWebApplication {
 
     private HttpServerOptions serverOptions;
 
-    private final ScanProcessor scanProcessor;
+    private final AnnotationScanner annotationScanner;
 
-    public SimpleWebApplicationImpl(Vertx vertx, Class<?> appClass) {
+    public WebApplicationImpl(Vertx vertx, Class<?> appClass) {
         this.vertx = vertx;
         this.appClass = appClass;
 
-        this.scanProcessor = new ScanProcessor(this);
+        this.annotationScanner = new AnnotationScanner(this);
     }
 
     public Future<HttpServer> run() throws RuntimeException {
@@ -101,7 +101,7 @@ public class SimpleWebApplicationImpl implements SimpleWebApplication {
         rootRouter.route().handler(LoggerHandler.create(LoggerFormat.SHORT));
 
         rootRouter.route().failureHandler(rc -> {
-            logger.error(rc.failure().getMessage());
+            logger.error("detect error.", rc.failure());
             int statusCode = 500;
             Throwable failure = rc.failure();
             if (failure instanceof ClientException || failure.getCause() instanceof ClientException) {
@@ -114,13 +114,14 @@ public class SimpleWebApplicationImpl implements SimpleWebApplication {
         rootRouter.route().handler(BodyHandler.create());
         rootRouter.route("/static/*").handler(StaticHandler.create("static"));
 
-        this.scanProcessor.scanHttpHandler();
+        this.annotationScanner.scanHttpHandler();
 
         Future<HttpServer> listen = httpServer.requestHandler(rootRouter).listen();
         listen.onFailure(f -> {
-            logger.error(f.getMessage());
+            logger.error("server listen failed.", f);
         });
 
+        Runtime.getRuntime().addShutdownHook(new Thread(WebApplicationImpl.this::stop));
 
         return listen;
     }
@@ -133,8 +134,7 @@ public class SimpleWebApplicationImpl implements SimpleWebApplication {
             config = new JsonObject(buffer);
             logger.info(config.toString());
         } catch (Exception e) {
-            logger.error(e.getMessage());
-            logger.info("use default config");
+            logger.error("load config error.use default config.", e);
             serverOptions = new HttpServerOptions();
         }
 
@@ -165,8 +165,7 @@ public class SimpleWebApplicationImpl implements SimpleWebApplication {
                 Method create = aClass.getDeclaredMethod("create", Vertx.class);
                 engine = (TemplateEngine) create.invoke(aClass, vertx);
             } catch (Exception e) {
-                logger.error(e.getMessage());
-                throw new RuntimeException(e);
+                throw new RuntimeException("init engine failed.", e);
             }
         }
     }
@@ -176,5 +175,13 @@ public class SimpleWebApplicationImpl implements SimpleWebApplication {
     }
 
 
+    @Override
+    public void stop() {
+        Future<Void> f = this.vertx.close();
+        f.onFailure(e -> {
+            logger.error("server stop failed.", e);
+            System.exit(-1);
+        }).await();
 
+    }
 }

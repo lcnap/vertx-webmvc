@@ -17,12 +17,12 @@
 #### 启动
 直接通过接口启动即可。appClass 要在最顶层。
 ```
-    SimpleWebApplication.run(Vertx vertx, Class<?> appClass);
+    WebApplication.run(Vertx vertx, Class<?> appClass);
 ```
 
 #### 业务代码样例
 
-详细参考 `test/.../SimpleWebApplicationTest`
+详细参考 `test/.../WebApplicationTest`
 
 ```java
     @HttpHandler(path = "/hi",contentType = "text/plain; charset=utf-8")
@@ -63,3 +63,4 @@
 #### 更新说明
 
 2026-01-24 更新依赖Vertx5.0.7版本。调整项目结构。
+2026-02-12 重构..

@@ -14,14 +14,17 @@
  * limitations under the License.
  */
 
-package com.github.lcnap.vertx.webmvc.processor;
+package com.github.lcnap.vertx.webmvc.annotation;
 
 import com.github.lcnap.vertx.webmvc.*;
-import com.github.lcnap.vertx.webmvc.impl.SimpleWebApplicationImpl;
+import com.github.lcnap.vertx.webmvc.handler.ShareMdcBlockingHandlerWrapper;
+import com.github.lcnap.vertx.webmvc.impl.WebApplicationImpl;
 import com.github.lcnap.vertx.webmvc.utils.Reflection;
+import com.github.lcnap.vertx.webmvc.utils.TypeConverter;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -36,12 +39,12 @@ import java.lang.reflect.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class ScanProcessor {
-    private final static Logger logger = LoggerFactory.getLogger(ScanProcessor.class);
+public class AnnotationScanner {
+    private final static Logger logger = LoggerFactory.getLogger(AnnotationScanner.class);
 
-    SimpleWebApplicationImpl application;
+    WebApplicationImpl application;
 
-    public ScanProcessor(SimpleWebApplicationImpl application) {
+    public AnnotationScanner(WebApplicationImpl application) {
         this.application = application;
     }
 
@@ -78,7 +81,7 @@ public class ScanProcessor {
 
 
                         if (annotation.isBlocking()) {
-                            route.blockingHandler(handler);
+                            route.blockingHandler(new ShareMdcBlockingHandlerWrapper(handler));
                         } else {
                             route.handler(handler);
                         }
@@ -89,13 +92,13 @@ public class ScanProcessor {
 
                 //类上的注解，只有path有效
                 HttpHandler classHttpHandler = a.getAnnotation(HttpHandler.class);
-                String path = classHttpHandler != null ? classHttpHandler.path() : "/*";
+                String path = classHttpHandler != null ? classHttpHandler.path() : "";
                 this.application.rootRouter().route(path + "/*").subRouter(classRouter);
             }
 
 
         } catch (Exception e) {
-            logger.error("scan handler failed.", e.getCause());
+            logger.error("scan handler failed.", e);
             this.application.vertx().close();
         }
     }
@@ -111,31 +114,31 @@ public class ScanProcessor {
                 //before
                 Object[] args = parseArgs(parameters, rc);
                 //handler
-                checkArg(args);
+                //checkArg(args);
                 Object invoke = method.invoke(o, args);
                 //after
                 parseReturnValue(rc, invoke, annotation);
-            } catch (ClientException e) {
-                throw e;
-            } catch (ServerException e) {
-                logger.error(e.getMessage());
+            } catch (ClientException | ServerException e) {
                 throw e;
             } catch (Exception e) {
-                logger.error(e.getMessage());
-                throw new RuntimeException(e);
+                throw new RuntimeException("uncheck exception.", e);
             }
 
         };
         return handler;
     }
 
+    //todo: 确定Param语义
     void checkArg(Object[] args) {
         for (Object o : args) {
             if (o != null) {
                 return;
             }
         }
-        throw new ClientException("request parameter.");
+        if (args.length == 0) {
+            return;
+        }
+        throw new ClientException("request parameter is null.");
     }
 
     static Object[] parseArgs(Parameter[] parameters, RoutingContext rc) throws RuntimeException {
@@ -161,13 +164,21 @@ public class ScanProcessor {
             Class<?> type = parameter.getType();
             String name = parameter.getName();
 
+            // 1、routingcontext 注入;已测试
             if (type.equals(RoutingContext.class)) {
                 args.add(rc);
                 continue;
             }
 
+            // 2、vertx 注入；已测试
+            if (type.equals(Vertx.class)) {
+                args.add(rc.vertx());
+                continue;
+            }
+
+            //参数注入与校验
             if (!Reflection.isPrimitiveType(type)) {
-                //简单 bean
+                //3、简单 bean 注入
 
                 try {
                     Field[] declaredFields = type.getDeclaredFields();
@@ -200,50 +211,60 @@ public class ScanProcessor {
                     args.add(bean);
                     continue;
                 } catch (RuntimeException | IllegalAccessException e) {
-                    throw new ClientException("parse bean error." + e.getMessage());
+                    throw new ClientException("parse bean error.", e);
                 }
             }
 
 
-            //  基本类型
+            // 4、基本类型注入
             String value = queryObject.getString(name);
-            if (value == null) {
+            //缺失或空串
+            if (value == null || value.isBlank()) {
                 //看是否有默认值
                 Param param = parameter.getAnnotation(Param.class);
                 if (param != null) {
                     value = param.defaultValue();
                 } else {
-                    throw new ClientException("request parameter " + name + "is not allowed to be null.");
+                    //
+                    value = "";
                 }
+//                } else {
+//                    throw new ClientException("request parameter " + name + " is not allowed to be null.");
+//                }
             }
 
+            //基本类型没有默认值，将初始化为0
+
             try {
-                if (type.equals(String.class)) {
-                    args.add(value);
-                } else if (type.equals(Integer.class) || type.equals(int.class)) {
-                    args.add(value.isEmpty() ? null : Integer.parseInt(value));
-                } else if (type.equals(Short.class) || type.equals(short.class)) {
-                    args.add(value.isEmpty() ? null : Short.parseShort(value));
-                } else if (type.equals(Long.class) || type.equals(long.class)) {
-                    args.add(value.isEmpty() ? null : Long.parseLong(value));
-                } else if (type.equals(Double.class) || type.equals(double.class)) {
-                    args.add(value.isEmpty() ? null : Double.parseDouble(value));
-                } else if (type.equals(Float.class) || type.equals(float.class)) {
-                    args.add(value.isEmpty() ? null : Float.parseFloat(value));
-                } else if (type.equals(Boolean.class) || type.equals(boolean.class)) {
-                    args.add(value.isEmpty() ? null : Boolean.getBoolean(value));
-                } else if (type.equals(Byte.class) || type.equals(byte.class)) {
-                    args.add(value.isEmpty() ? null : Byte.parseByte(value));
-                } else {
-                    throw new ClientException("unsupported type:" + type.getName() + ":" + name + ":" + value);
-                }
-            } catch (NumberFormatException e) {
-                throw new ClientException("bad parameter.");
+                Object convert = TypeConverter.convert(type, value);
+                args.add(convert);
+//                if (type.equals(String.class)) {
+//                    args.add(value);
+//                } else if (type.equals(Integer.class) || type.equals(int.class)) {
+//                    args.add(value.isBlank() ? 0 : Integer.parseInt(value));
+//                } else if (type.equals(Short.class) || type.equals(short.class)) {
+//                    args.add(value.isBlank() ? 0 : Short.parseShort(value));
+//                } else if (type.equals(Long.class) || type.equals(long.class)) {
+//                    args.add(value.isBlank() ? 0 : Long.parseLong(value));
+//                } else if (type.equals(Double.class) || type.equals(double.class)) {
+//                    args.add(value.isBlank() ? 0 : Double.parseDouble(value));
+//                } else if (type.equals(Float.class) || type.equals(float.class)) {
+//                    args.add(value.isBlank() ? 0 : Float.parseFloat(value));
+//                } else if (type.equals(Boolean.class) || type.equals(boolean.class)) {
+//                    args.add(value.isBlank() ? false : Boolean.parseBoolean(value));
+//                } else if (type.equals(Byte.class) || type.equals(byte.class)) {
+//                    args.add(value.isBlank() ? 0 : Byte.parseByte(value));
+//                } else {
+//                    throw new ClientException("unsupported type:" + type.getName() + ":" + name + ":" + value);
+//                }
+            } catch (UnsupportedOperationException | IllegalArgumentException e) {
+                throw new ClientException("bad parameter.", e);
             } catch (ClientException e) {
                 throw e;
             } catch (Exception e) {
-                throw new ServerException("system error");
+                throw new ServerException("server error.", e);
             }
+
 
 
         }
@@ -292,7 +313,7 @@ public class ScanProcessor {
                 }
                 Future<Buffer> render = engine.render(rc.data(), "templates/" + result);
                 if (render.failed()) {
-                    logger.error("render template error. {}", render.cause().getMessage());
+                    logger.error("render template error.", render.cause());
                     rc.response().setStatusCode(500).end(render.cause().getMessage());
                 } else {
                     rc.response().putHeader("content-type", annotation.produce()).end(render.result());

@@ -22,27 +22,38 @@ import io.vertx.core.http.HttpServer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.client.WebClient;
+import io.vertx.junit5.VertxExtension;
+import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
 @DisplayName("简单测试")
-public class SimpleWebApplicationTest {
-    final static Logger logger = LoggerFactory.getLogger(SimpleWebApplicationTest.class);
+@ExtendWith(VertxExtension.class)
+public class WebApplicationTest {
+    final static Logger logger = LoggerFactory.getLogger(WebApplicationTest.class);
 
     @HttpHandler(path = "/main")
     public static class WebApp {
 
         public static void main(String[] args) {
-            SimpleWebApplication.run(Vertx.vertx(), WebApp.class);
+            WebApplication.run(Vertx.vertx(), WebApp.class);
+
         }
 
         @HttpHandler(path = "/hi", produce = "text/plain; charset=utf-8")
-        public String hi(@Param String msg) {
+        public String hi(int msg) {
+            return "hi " + msg;
+        }
+
+        @HttpHandler(path = "/conv")
+        public String conv(Long msg) {
             return "hi " + msg;
         }
 
@@ -63,8 +74,19 @@ public class SimpleWebApplicationTest {
         @HttpHandler(path = "/msg", isBlocking = true)
         public Object object() throws InterruptedException {
             Msg msg = new Msg();
-            Thread.sleep(5000);
+            Thread.sleep(3000);
             return msg;
+        }
+
+        @HttpHandler(path = "/bean")
+        public Bean bean(Bean bean) {
+            return bean;
+        }
+
+        static class Bean {
+            public int code;
+            @Param(size = 10)
+            public String msg;
         }
 
         static class Msg {
@@ -79,29 +101,36 @@ public class SimpleWebApplicationTest {
         }
     }
 
+    @BeforeEach
+    public void startServer(Vertx vertx, VertxTestContext testContext) {
+        Future<HttpServer> run = WebApplication.run(vertx, WebApplication.class);
+        run.onSuccess(httpServer -> {
+            testContext.completeNow();
+        });
+
+    }
+
 
     @Test
-    public void run1() {
-        Vertx vertx = Vertx.vertx();
+    public void run1(Vertx vertx, VertxTestContext testContext) {
         int port = 8081;
         String file = vertx.fileSystem().readFileBlocking("file").toString();
         Map<String, String> testCases = Map.of(
                 "/main/hi?msg=2026", "hi 2026",
                 "/main/jsonobject", new JsonObject().put("now", "2026-01-24").put("server", "vertx").put("x", "消息").toString(),
-                "/main/msg", JsonObject.mapFrom(new WebApp.Msg()).toString()
-                //"/main/file", file
-
+                "/main/msg", JsonObject.mapFrom(new WebApp.Msg()).toString(),
+                //"/main/file", file,
+                "/main/bean?code=12&msg=fd232", new JsonObject().put("code", 12).put("msg", "fd232").toString()
 
         );
-        Future<HttpServer> run = SimpleWebApplication.run(vertx, SimpleWebApplication.class);
 
-        run.onSuccess(server -> {
-            WebClient client = WebClient.create(vertx);
-            testCases.forEach((k, v) -> {
-                logger.info("testcase: path: {};want: {}", k, v);
-                client.get(port, "localhost", k)
-                        .send()
-                        .onSuccess(resp -> {
+        WebClient client = WebClient.create(vertx);
+
+        testCases.forEach((k, v) -> {
+            logger.info("testcase: path: {};want: {}", k, v);
+            client.get(port, "localhost", k).send()
+                    .onSuccess(resp -> {
+                        testContext.verify(() -> {
                             if (resp.statusCode() >= 300) {
                                 Assertions.fail(resp.statusMessage());
                             }
@@ -110,16 +139,13 @@ public class SimpleWebApplicationTest {
                             } else {
                                 Assertions.assertEquals(v, resp.bodyAsString());
                             }
-                        })
-                        .onFailure(resp -> {
-                            Assertions.fail(resp.getMessage());
-                        });
 
-            });
-        }).onFailure(ex -> {
-            Assertions.fail(ex.getMessage());
+                            testContext.completeNow();
+                        });
+                    })
+                    .onFailure(testContext::failNow).await();//等待结果,避免测试方法提前结束
         });
-        run.await();
+
 
     }
 

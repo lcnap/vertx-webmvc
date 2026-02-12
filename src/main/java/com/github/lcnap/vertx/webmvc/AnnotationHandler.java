@@ -16,12 +16,7 @@
 
 package com.github.lcnap.vertx.webmvc;
 
-public class ClientException extends RuntimeException {
-    public ClientException(String s) {
-        super(s);
-    }
+public interface AnnotationHandler<T> {
 
-    public ClientException(String s, Throwable throwable) {
-        super(s, throwable);
-    }
+    T handle(Param annotation, Class<?> type, T bean);
 }
