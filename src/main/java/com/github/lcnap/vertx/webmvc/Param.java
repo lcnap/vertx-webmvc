@@ -22,6 +22,31 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface Param {
-
+    //默认值为空串，代表非必填,基本类型将会初始化为类型零值
     String defaultValue() default "";
+
+    //默认必填；为false或没有注解，则非必填
+    boolean required() default true;
+
+    //非空则以name为key提取参数
+    String name() default "";
+
+    //日期、字符串格式化
+    String format() default "";
+
+    //字符串或列表size最大值
+    int size() default 0;
+
+    //值范围
+    String[] limit() default {};
+
+    long max() default Long.MAX_VALUE;
+
+    long min() default Long.MIN_VALUE;
+
+    //描述
+    String description() default "";
+
+    //其他校验
+    String rule() default "";
 }

@@ -14,14 +14,16 @@
  * limitations under the License.
  */
 
-package com.github.lcnap.vertx.webmvc;
+package com.github.lcnap.vertx.webmvc.rule;
 
-public class ClientException extends RuntimeException {
-    public ClientException(String s) {
-        super(s);
-    }
+import groovy.lang.GroovyShell;
 
-    public ClientException(String s, Throwable throwable) {
-        super(s, throwable);
+public class RuleCheckerImpl<T> implements RuleChecker<T> {
+    private final GroovyShell shell = new GroovyShell();
+
+    @Override
+    public boolean exec(String rules, T value) {
+        shell.setVariable("value", value);
+        return (boolean) shell.evaluate(rules);
     }
 }
