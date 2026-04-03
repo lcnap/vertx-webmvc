@@ -32,12 +32,27 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.LocalDate;
 import java.util.Map;
 
 @DisplayName("简单测试")
 @ExtendWith(VertxExtension.class)
 public class WebApplicationTest {
     final static Logger logger = LoggerFactory.getLogger(WebApplicationTest.class);
+
+    public enum Status {
+        YES("01"), NO("02");
+
+        private final String code;
+
+        Status(String code) {
+            this.code = code;
+        }
+
+        public String code() {
+            return code;
+        }
+    }
 
     @HttpHandler(path = "/main")
     public static class WebApp {
@@ -95,11 +110,139 @@ public class WebApplicationTest {
             public String date = "2026-01-24";
         }
 
+
         @HttpHandler(path = "/file")
         public void file(RoutingContext routingContext) {
             routingContext.response().sendFile("file");
         }
+
+
+        static class Exam {
+            public String address() {
+                return address;
+            }
+
+            public void setAddress(String address) {
+                this.address = address;
+            }
+
+            @Param(defaultValue = "10")
+            private Integer id;
+
+            @Param(required = false)
+            private String name;
+
+            @Param(size = 1)
+            private String age;
+
+            @Param(limit = {
+                    "深圳", "北京", "GZ"
+            })
+            private String address;
+
+            @Param(defaultValue = "2020-01-01")
+            private LocalDate date;
+
+            @Param(defaultValue = "YES")
+            private Status status;
+
+            @Param(max = 100)
+            private long m;
+
+            @Param(defaultValue = "1")
+            private int i;
+
+            @Param(defaultValue = "1")
+            private String j;
+
+            @Override
+            public String toString() {
+                return "Exam{" +
+                        "id=" + id +
+                        ", name='" + name + '\'' +
+                        ", age='" + age + '\'' +
+                        ", address='" + address + '\'' +
+                        ", date=" + date +
+                        ", status=" + status +
+                        ", m=" + m +
+                        ", i=" + i +
+                        ", j='" + j + '\'' +
+                        '}';
+            }
+
+            public Integer id() {
+                return id;
+            }
+
+            public void setId(Integer id) {
+                this.id = id;
+            }
+
+            public String name() {
+                return name;
+            }
+
+            public void setName(String name) {
+                this.name = name;
+            }
+
+            public String age() {
+                return age;
+            }
+
+            public void setAge(String age) {
+                this.age = age;
+            }
+
+            public LocalDate date() {
+                return date;
+            }
+
+            public void setDate(LocalDate date) {
+                this.date = date;
+            }
+
+            public Status status() {
+                return status;
+            }
+
+            public void setStatus(Status status) {
+                this.status = status;
+            }
+
+            public long m() {
+                return m;
+            }
+
+            public void setM(long m) {
+                this.m = m;
+            }
+
+            public int i() {
+                return i;
+            }
+
+            public void setI(int i) {
+                this.i = i;
+            }
+
+            public String j() {
+                return j;
+            }
+
+            public void setJ(String j) {
+                this.j = j;
+            }
+        }
+
+
+        @HttpHandler(path = "/exam")
+        public Object exam(Exam exam) {
+            return exam;
+        }
+
     }
+
 
     @BeforeEach
     public void startServer(Vertx vertx, VertxTestContext testContext) {
@@ -120,7 +263,8 @@ public class WebApplicationTest {
                 "/main/jsonobject", new JsonObject().put("now", "2026-01-24").put("server", "vertx").put("x", "消息").toString(),
                 "/main/msg", JsonObject.mapFrom(new WebApp.Msg()).toString(),
                 //"/main/file", file,
-                "/main/bean?code=12&msg=fd232", new JsonObject().put("code", 12).put("msg", "fd232").toString()
+                "/main/bean?code=12&msg=fd232", new JsonObject().put("code", "12").put("msg", "fd232").toString(),
+                "/main/exam?address=GZ&name=12&age=2", new JsonObject().toString()
 
         );
 

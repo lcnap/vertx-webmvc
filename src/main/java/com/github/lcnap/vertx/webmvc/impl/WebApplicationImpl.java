@@ -101,7 +101,7 @@ public class WebApplicationImpl implements WebApplication {
         rootRouter.route().handler(LoggerHandler.create(LoggerFormat.SHORT));
 
         rootRouter.route().failureHandler(rc -> {
-            logger.error("detect error.", rc.failure());
+            logger.error("detect error." + rc.request().uri(), rc.failure());
             int statusCode = 500;
             Throwable failure = rc.failure();
             if (failure instanceof ClientException || failure.getCause() instanceof ClientException) {

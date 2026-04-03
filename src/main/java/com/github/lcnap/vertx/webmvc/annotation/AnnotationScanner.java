@@ -44,9 +44,12 @@ public class AnnotationScanner {
 
     WebApplicationImpl application;
 
+    private final static ParamHandler paramHandler = new ParamHandler();
+
     public AnnotationScanner(WebApplicationImpl application) {
         this.application = application;
     }
+
 
     //扫描业务类
     public void scanHttpHandler() {
@@ -176,9 +179,9 @@ public class AnnotationScanner {
                 continue;
             }
 
-            //参数注入与校验
+            //3、参数注入与校验
             if (!Reflection.isPrimitiveType(type)) {
-                //3、简单 bean 注入
+                //3.1、简单 bean 注入
 
                 try {
                     Field[] declaredFields = type.getDeclaredFields();
@@ -198,12 +201,13 @@ public class AnnotationScanner {
                         Param fieldAnnotation = field.getAnnotation(Param.class);
                         field.setAccessible(true);
                         Object fieldValue = field.get(bean);
-                        if (fieldValue == null) {
-                            if (fieldAnnotation != null) {
-                                field.set(bean, fieldAnnotation.defaultValue());
-                            } else {
-                                throw new ClientException("request parameter. " + name + "." + field.getName() + " null");
+                        if (fieldAnnotation != null) {
+                            var defaultValue = paramHandler.handle(fieldAnnotation, field.getType(), fieldValue);
+                            if (defaultValue != null) {
+                                field.set(bean, defaultValue);
                             }
+                        } else {
+                            // throw new ClientException("request parameter: " + name + "." + field.getName() + " is null");
                         }
 
 
@@ -217,46 +221,24 @@ public class AnnotationScanner {
 
 
             // 4、基本类型注入
-            String value = queryObject.getString(name);
+            String valueStr = queryObject.getString(name);
             //缺失或空串
-            if (value == null || value.isBlank()) {
+            if (valueStr == null || valueStr.isBlank()) {
                 //看是否有默认值
                 Param param = parameter.getAnnotation(Param.class);
                 if (param != null) {
-                    value = param.defaultValue();
+                    valueStr = param.defaultValue();
                 } else {
-                    //
-                    value = "";
+                    //基本类型没有默认值，将初始化为0
+                    valueStr = "";
                 }
-//                } else {
-//                    throw new ClientException("request parameter " + name + " is not allowed to be null.");
-//                }
+
             }
 
-            //基本类型没有默认值，将初始化为0
-
             try {
-                Object convert = TypeConverter.convert(type, value);
+                Object convert = TypeConverter.convert(type, valueStr);
                 args.add(convert);
-//                if (type.equals(String.class)) {
-//                    args.add(value);
-//                } else if (type.equals(Integer.class) || type.equals(int.class)) {
-//                    args.add(value.isBlank() ? 0 : Integer.parseInt(value));
-//                } else if (type.equals(Short.class) || type.equals(short.class)) {
-//                    args.add(value.isBlank() ? 0 : Short.parseShort(value));
-//                } else if (type.equals(Long.class) || type.equals(long.class)) {
-//                    args.add(value.isBlank() ? 0 : Long.parseLong(value));
-//                } else if (type.equals(Double.class) || type.equals(double.class)) {
-//                    args.add(value.isBlank() ? 0 : Double.parseDouble(value));
-//                } else if (type.equals(Float.class) || type.equals(float.class)) {
-//                    args.add(value.isBlank() ? 0 : Float.parseFloat(value));
-//                } else if (type.equals(Boolean.class) || type.equals(boolean.class)) {
-//                    args.add(value.isBlank() ? false : Boolean.parseBoolean(value));
-//                } else if (type.equals(Byte.class) || type.equals(byte.class)) {
-//                    args.add(value.isBlank() ? 0 : Byte.parseByte(value));
-//                } else {
-//                    throw new ClientException("unsupported type:" + type.getName() + ":" + name + ":" + value);
-//                }
+
             } catch (UnsupportedOperationException | IllegalArgumentException e) {
                 throw new ClientException("bad parameter.", e);
             } catch (ClientException e) {
@@ -264,8 +246,6 @@ public class AnnotationScanner {
             } catch (Exception e) {
                 throw new ServerException("server error.", e);
             }
-
-
 
         }
         return args.toArray();

@@ -29,7 +29,7 @@ public class RequestIdHandler implements Handler<RoutingContext> {
 
     @Override
     public void handle(RoutingContext rc) {
-        String id = UUID.randomUUID().toString();
+        String id = UUID.randomUUID().toString().substring(0, 8);
         MDC.put("requestId", id);
         rc.put("mdc", MDC.getCopyOfContextMap());
         rc.response().putHeader("x-request-id", id);
