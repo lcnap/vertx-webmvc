@@ -16,7 +16,9 @@
 
 package com.github.lcnap.vertx.webmvc;
 
+import java.lang.reflect.Field;
+
 public interface AnnotationHandler<T> {
 
-    T handle(Param annotation, Class<?> type, T bean);
+    T handle(Param annotation, Class<?> type, Field field, T bean);
 }

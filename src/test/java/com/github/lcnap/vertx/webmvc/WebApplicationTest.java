@@ -117,7 +117,8 @@ public class WebApplicationTest {
         }
 
 
-        static class Exam {
+        public static class Exam {
+
             public String address() {
                 return address;
             }
@@ -132,13 +133,26 @@ public class WebApplicationTest {
             @Param(required = false)
             private String name;
 
-            @Param(size = 1)
+            @Param(size = 1, defaultValue = "1")
             private String age;
 
             @Param(limit = {
                     "深圳", "北京", "GZ"
             })
             private String address;
+
+
+            public LocalDate getDate() {
+                return date;
+            }
+
+            public void setDate(LocalDate date) {
+                this.date = date;
+            }
+
+            public String getAddress() {
+                return address;
+            }
 
             @Param(defaultValue = "2020-01-01")
             private LocalDate date;
@@ -152,25 +166,10 @@ public class WebApplicationTest {
             @Param(defaultValue = "1")
             private int i;
 
-            @Param(defaultValue = "1")
+            @Param(defaultValue = "1", rule = "value.toInteger() > 10")
             private String j;
 
-            @Override
-            public String toString() {
-                return "Exam{" +
-                        "id=" + id +
-                        ", name='" + name + '\'' +
-                        ", age='" + age + '\'' +
-                        ", address='" + address + '\'' +
-                        ", date=" + date +
-                        ", status=" + status +
-                        ", m=" + m +
-                        ", i=" + i +
-                        ", j='" + j + '\'' +
-                        '}';
-            }
-
-            public Integer id() {
+            public Integer getId() {
                 return id;
             }
 
@@ -178,7 +177,7 @@ public class WebApplicationTest {
                 this.id = id;
             }
 
-            public String name() {
+            public String getName() {
                 return name;
             }
 
@@ -186,7 +185,7 @@ public class WebApplicationTest {
                 this.name = name;
             }
 
-            public String age() {
+            public String getAge() {
                 return age;
             }
 
@@ -194,15 +193,8 @@ public class WebApplicationTest {
                 this.age = age;
             }
 
-            public LocalDate date() {
-                return date;
-            }
 
-            public void setDate(LocalDate date) {
-                this.date = date;
-            }
-
-            public Status status() {
+            public Status getStatus() {
                 return status;
             }
 
@@ -210,7 +202,7 @@ public class WebApplicationTest {
                 this.status = status;
             }
 
-            public long m() {
+            public long getM() {
                 return m;
             }
 
@@ -218,7 +210,7 @@ public class WebApplicationTest {
                 this.m = m;
             }
 
-            public int i() {
+            public int getI() {
                 return i;
             }
 
@@ -226,7 +218,7 @@ public class WebApplicationTest {
                 this.i = i;
             }
 
-            public String j() {
+            public String getJ() {
                 return j;
             }
 

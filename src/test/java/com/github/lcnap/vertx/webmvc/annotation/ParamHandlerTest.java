@@ -89,7 +89,7 @@ class ParamHandlerTest {
 
         for (Field field : exam.getClass().getDeclaredFields()) {
             var annotation = field.getAnnotation(Param.class);
-            Object handle = handler.handle(annotation, field.getType(), field.get(exam));
+            Object handle = handler.handle(annotation, field.getType(), field, field.get(exam));
             field.setAccessible(true);
             field.set(exam, handle);
 

@@ -17,6 +17,9 @@
 package com.github.lcnap.vertx.webmvc.impl;
 
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.github.lcnap.vertx.webmvc.ClientException;
 import com.github.lcnap.vertx.webmvc.WebApplication;
 import com.github.lcnap.vertx.webmvc.annotation.AnnotationScanner;
@@ -27,6 +30,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.json.jackson.DatabindCodec;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.common.template.TemplateEngine;
 import io.vertx.ext.web.handler.BodyHandler;
@@ -91,6 +95,13 @@ public class WebApplicationImpl implements WebApplication {
     }
 
     public Future<HttpServer> run() throws RuntimeException {
+
+        // Vert.x Web 配置 Jackson
+        ObjectMapper mapper = DatabindCodec.mapper();
+        mapper.registerModule(new JavaTimeModule());
+        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
+
         HttpServerOptions serverOptions = readConfigFile();
 
         httpServer = vertx.createHttpServer(serverOptions);
@@ -101,14 +112,13 @@ public class WebApplicationImpl implements WebApplication {
         rootRouter.route().handler(LoggerHandler.create(LoggerFormat.SHORT));
 
         rootRouter.route().failureHandler(rc -> {
-            logger.error("detect error." + rc.request().uri(), rc.failure());
             int statusCode = 500;
             Throwable failure = rc.failure();
             if (failure instanceof ClientException || failure.getCause() instanceof ClientException) {
                 statusCode = 400;
             }
-            rc.response().setStatusCode(statusCode).end(rc.failure().getMessage());
-
+            rc.response().setStatusCode(statusCode).end(failure.getMessage());
+            logger.error("detect error: " + rc.request().uri(), rc.failure());
         });
 
         rootRouter.route().handler(BodyHandler.create());

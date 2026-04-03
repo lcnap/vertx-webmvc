@@ -22,6 +22,7 @@ import com.github.lcnap.vertx.webmvc.Param;
 import com.github.lcnap.vertx.webmvc.rule.RuleChecker;
 import com.github.lcnap.vertx.webmvc.rule.RuleCheckerImpl;
 
+import java.lang.reflect.Field;
 import java.util.List;
 
 public class ParamHandler implements AnnotationHandler<Object> {
@@ -29,7 +30,7 @@ public class ParamHandler implements AnnotationHandler<Object> {
     private RuleChecker<Object> ruleChecker = new RuleCheckerImpl<>();
 
     @Override
-    public Object handle(Param annotation, Class<?> type, Object bean) {
+    public Object handle(Param annotation, Class<?> type, Field field, Object bean) {
 
         if (type.isArray()) {
             throw new RuntimeException("Array parameters are not supported");
@@ -43,7 +44,7 @@ public class ParamHandler implements AnnotationHandler<Object> {
             }
             var defaultValue = annotation.defaultValue();
             if (defaultValue.isBlank()) {
-                throw new RuntimeException("Required parameter is empty");
+                throw new RuntimeException(field.getName() + " required parameter is empty.");
             }
 
             if (ReflectionUtils.isPrimitive(type)) {
@@ -55,19 +56,19 @@ public class ParamHandler implements AnnotationHandler<Object> {
             if (ReflectionUtils.isDateType(type)) {
                 return ReflectionUtils.convertDate(type, defaultValue, annotation.format());
             }
-            throw new UnsupportedOperationException("Unsupported type");
+            throw new UnsupportedOperationException(field.getName() + " Unsupported type");
         }
 
         //处理长度限制
         if (annotation.size() != 0) {
             if (bean instanceof CharSequence str) {
                 if (str.length() > annotation.size()) {
-                    throw new ClientException("exceeds the maximum size limit");
+                    throw new ClientException(field.getName() + " exceeds the maximum size limit");
                 }
             }
             if (bean instanceof List<?> list) {
                 if (list.size() > annotation.size()) {
-                    throw new ClientException("exceeds the maximum size limit");
+                    throw new ClientException(field.getName() + " exceeds the maximum size limit");
                 }
             }
 
@@ -83,20 +84,20 @@ public class ParamHandler implements AnnotationHandler<Object> {
                         return bean;
                     }
                 }
-                throw new ClientException("unsupported values");
+                throw new ClientException(field.getName() + " unsupported values");
             }
         }
 
         //规则
         if (!annotation.rule().isBlank()) {
             if (!ruleChecker.exec(annotation.rule(), bean)) {
-                throw new ClientException("rule check failed");
+                throw new ClientException(field.getName() + " rule check failed: " + annotation.rule());
             }
         }
 
         if (bean instanceof Number) {
             if (annotation.max() < ((Number) bean).longValue() || annotation.min() > ((Number) bean).longValue()) {
-                throw new ClientException("exceeds the value limit");
+                throw new ClientException(field.getName() + " exceeds the value limit");
             }
         }
 

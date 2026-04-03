@@ -202,7 +202,7 @@ public class AnnotationScanner {
                         field.setAccessible(true);
                         Object fieldValue = field.get(bean);
                         if (fieldAnnotation != null) {
-                            var defaultValue = paramHandler.handle(fieldAnnotation, field.getType(), fieldValue);
+                            var defaultValue = paramHandler.handle(fieldAnnotation, field.getType(), field, fieldValue);
                             if (defaultValue != null) {
                                 field.set(bean, defaultValue);
                             }
@@ -215,7 +215,7 @@ public class AnnotationScanner {
                     args.add(bean);
                     continue;
                 } catch (RuntimeException | IllegalAccessException e) {
-                    throw new ClientException("parse bean error.", e);
+                    throw new ClientException("parse bean error. " + e.getMessage(), e.getCause());
                 }
             }
 
