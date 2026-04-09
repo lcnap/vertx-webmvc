@@ -164,6 +164,17 @@ public class AnnotationScanner {
 
 
         for (Parameter parameter : parameters) {
+            var path = parameter.getAnnotation(PathParam.class);
+            if (path != null) {
+                var key = !path.value().isBlank() ? path.value() : parameter.getName();
+                var value = rc.pathParam(key);
+                if (value == null) {
+                    throw new ClientException("path parameter " + key + " is null.");
+                }
+                args.add(value);
+                continue;
+            }
+
             Class<?> type = parameter.getType();
             String name = parameter.getName();
 

@@ -21,6 +21,7 @@ import com.github.lcnap.vertx.webmvc.ClientException;
 import com.github.lcnap.vertx.webmvc.Param;
 import com.github.lcnap.vertx.webmvc.rule.RuleChecker;
 import com.github.lcnap.vertx.webmvc.rule.RuleCheckerImpl;
+import com.github.lcnap.vertx.webmvc.utils.ReflectionUtils;
 
 import java.lang.reflect.Field;
 import java.util.List;

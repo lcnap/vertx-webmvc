@@ -233,6 +233,16 @@ public class WebApplicationTest {
             return exam;
         }
 
+        @HttpHandler(path = "/:path", produce = "text/plain ")
+        public String path(@PathParam("path") String path) {
+            return path;
+        }
+
+        @HttpHandler(path = "/path1/:path", produce = "text/plain ")
+        public String path1(@PathParam String path) {
+            return path;
+        }
+
     }
 
 
@@ -256,8 +266,43 @@ public class WebApplicationTest {
                 "/main/msg", JsonObject.mapFrom(new WebApp.Msg()).toString(),
                 //"/main/file", file,
                 "/main/bean?code=12&msg=fd232", new JsonObject().put("code", "12").put("msg", "fd232").toString(),
-                "/main/exam?address=GZ&name=12&age=2", new JsonObject().toString()
+                "/main/exam?address=GZ&name=12&age=2", new JsonObject().toString(),
+                "/main/id0001", "id0001"
 
+        );
+
+        WebClient client = WebClient.create(vertx);
+
+        testCases.forEach((k, v) -> {
+            logger.info("testcase: path: {};want: {}", k, v);
+            client.get(port, "localhost", k).send()
+                    .onSuccess(resp -> {
+                        testContext.verify(() -> {
+                            if (resp.statusCode() >= 300) {
+                                Assertions.fail(resp.statusMessage());
+                            }
+                            if (resp.headers().get("Content-Type").contains("json")) {
+                                Assertions.assertEquals(v, resp.bodyAsJsonObject().toString());
+                            } else {
+                                Assertions.assertEquals(v, resp.bodyAsString());
+                            }
+
+                            testContext.completeNow();
+                        });
+                    })
+                    .onFailure(testContext::failNow).await();//等待结果,避免测试方法提前结束
+        });
+
+
+    }
+
+    @Test
+    public void run2(Vertx vertx, VertxTestContext testContext) {
+        int port = 8081;
+        String file = vertx.fileSystem().readFileBlocking("file").toString();
+        Map<String, String> testCases = Map.of(
+                "/main/id0001", "id0001",
+                "/main/path1/id0001", "id0001"
         );
 
         WebClient client = WebClient.create(vertx);

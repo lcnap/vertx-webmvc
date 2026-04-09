@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.github.lcnap.vertx.webmvc.annotation;
+package com.github.lcnap.vertx.webmvc.utils;
 
 import com.github.lcnap.vertx.webmvc.ClientException;
 
