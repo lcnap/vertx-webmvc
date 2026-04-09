@@ -78,7 +78,7 @@ public class WebApplicationTest {
             return new JsonObject().put("now", "2026-01-24").put("server", "vertx").put("x", "消息");
         }
 
-        @HttpHandler(path = "/home", produce = "text/html;")
+        @HttpHandler(path = "/home", produce = MimeType.HTML)
         public String home(RoutingContext routingContext) {
             routingContext.put("msg", "freemarker 中文");
             routingContext.put("code", "300");
@@ -238,7 +238,7 @@ public class WebApplicationTest {
             return path;
         }
 
-        @HttpHandler(path = "/path1/:path", produce = "text/plain ")
+        @HttpHandler(path = "/path1/:path", produce = MimeType.Plain)
         public String path1(@PathParam String path) {
             return path;
         }

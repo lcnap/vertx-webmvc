@@ -42,6 +42,11 @@
                                .put("server","vertx")
                                .put("x","消息");
     }
+
+@HttpHandler(path = "/:path", produce = MimeType.Plain)
+public String path(@PathParam("path") String path) {
+    return path;
+}
 ```
 
 #### 配置
@@ -65,3 +70,4 @@
 2026-01-24 更新依赖Vertx5.0.7版本。调整项目结构。
 2026-02-12 重构..
 2026-04-04 参数校验
+2026-04-09 支持 path parameter

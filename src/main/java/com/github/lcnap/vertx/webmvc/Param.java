@@ -28,9 +28,6 @@ public @interface Param {
     //默认必填；为false或没有注解，则非必填
     boolean required() default true;
 
-    //非空则以name为key提取参数
-    String name() default "";
-
     //日期、字符串格式化
     String format() default "";
 

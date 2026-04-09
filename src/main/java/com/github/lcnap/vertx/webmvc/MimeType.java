@@ -16,22 +16,8 @@
 
 package com.github.lcnap.vertx.webmvc;
 
-
-import java.lang.annotation.*;
-
-@Target({ElementType.METHOD, ElementType.TYPE})
-@Retention(RetentionPolicy.RUNTIME)
-@Documented
-public @interface HttpHandler {
-
-    String path();
-
-    HttpMethod[] method() default {HttpMethod.GET, HttpMethod.POST};
-
-    String produce() default MimeType.JSON;
-
-    /*String consumes() default "text/html";*/
-
-    boolean isBlocking() default false;
-
+public class MimeType {
+    public final static String Plain = "text/plain; charset=utf-8";
+    public final static String HTML = "text/html; charset=utf-8";
+    public final static String JSON = "application/json; charset=utf-8";
 }
