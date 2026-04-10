@@ -131,19 +131,6 @@ public class AnnotationScanner {
         return handler;
     }
 
-    //todo: 确定Param语义
-    void checkArg(Object[] args) {
-        for (Object o : args) {
-            if (o != null) {
-                return;
-            }
-        }
-        if (args.length == 0) {
-            return;
-        }
-        throw new ClientException("request parameter is null.");
-    }
-
     static Object[] parseArgs(Parameter[] parameters, RoutingContext rc) throws RuntimeException {
         List<Object> args = new LinkedList<>();
 
@@ -276,7 +263,8 @@ public class AnnotationScanner {
             // 根据注解，处理返回类型。
             String result = invoke.toString();
             if (annotation.produce().contains("application/json")) {
-                if (invoke instanceof JsonObject || invoke instanceof String) {
+                if (invoke instanceof JsonObject
+                        || invoke instanceof JsonArray || invoke instanceof String) {
                     result = invoke.toString();
                 } else if (invoke instanceof Map) {
                     result = new JsonObject((Map) invoke).toString();
@@ -285,7 +273,7 @@ public class AnnotationScanner {
                 } else if (invoke instanceof List) {
                     result = new JsonArray((List) invoke).toString();
                 } else {
-                    // 尝试不支持类型
+                    // 尝试 bean
                     try {
                         result = JsonObject.mapFrom(invoke).toString();
                     } catch (Exception e) {

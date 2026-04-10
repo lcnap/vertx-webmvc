@@ -19,6 +19,7 @@ package com.github.lcnap.vertx.webmvc;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServer;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.client.WebClient;
@@ -243,6 +244,14 @@ public class WebApplicationTest {
             return path;
         }
 
+
+        @HttpHandler(path = "/array")
+        public JsonArray array() {
+            return JsonArray.of(
+                    new JsonObject().put("now", "")
+            );
+        }
+
     }
 
 
@@ -302,7 +311,8 @@ public class WebApplicationTest {
         String file = vertx.fileSystem().readFileBlocking("file").toString();
         Map<String, String> testCases = Map.of(
                 "/main/id0001", "id0001",
-                "/main/path1/id0001", "id0001"
+                "/main/path1/id0001", "id0001",
+                "/main/array", "[{\"now\":\"\"}]"
         );
 
         WebClient client = WebClient.create(vertx);
@@ -316,7 +326,12 @@ public class WebApplicationTest {
                                 Assertions.fail(resp.statusMessage());
                             }
                             if (resp.headers().get("Content-Type").contains("json")) {
-                                Assertions.assertEquals(v, resp.bodyAsJsonObject().toString());
+                                var head = resp.body().getString(0, 1);
+                                if (head.equals("[")) {
+                                    Assertions.assertEquals(v, resp.bodyAsJsonArray().toString());
+                                } else {
+                                    Assertions.assertEquals(v, resp.bodyAsJsonObject().toString());
+                                }
                             } else {
                                 Assertions.assertEquals(v, resp.bodyAsString());
                             }
