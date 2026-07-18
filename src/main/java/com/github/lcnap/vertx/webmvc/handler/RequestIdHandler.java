@@ -34,7 +34,7 @@ public class RequestIdHandler implements Handler<RoutingContext> {
         rc.put("mdc", MDC.getCopyOfContextMap());
         rc.response().putHeader("x-request-id", id);
         rc.next();
-        MDC.remove("requestId");
+        //MDC.remove("requestId");
     }
 
     public static RequestIdHandler create() {

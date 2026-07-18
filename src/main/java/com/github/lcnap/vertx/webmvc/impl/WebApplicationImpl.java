@@ -40,7 +40,11 @@ import io.vertx.ext.web.handler.StaticHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 public class WebApplicationImpl implements WebApplication {
     private final static Logger logger = LoggerFactory.getLogger(WebApplicationImpl.class);
@@ -87,10 +91,12 @@ public class WebApplicationImpl implements WebApplication {
 
     private final AnnotationScanner annotationScanner;
 
+    private final ConcurrentMap<String, Object> beanMap;
+
     public WebApplicationImpl(Vertx vertx, Class<?> appClass) {
         this.vertx = vertx;
         this.appClass = appClass;
-
+        this.beanMap = new ConcurrentHashMap<>();
         this.annotationScanner = new AnnotationScanner(this);
     }
 
@@ -193,5 +199,22 @@ public class WebApplicationImpl implements WebApplication {
             System.exit(-1);
         }).await();
 
+    }
+
+    public Object getBean(Class<?> beanClass) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+        var o = beanMap.get(beanClass.getName());
+        if (o == null) {
+            Constructor<?> declaredConstructor = beanClass.getDeclaredConstructor();
+            o = declaredConstructor.newInstance();
+            putBean(o);
+        }
+        return o;
+    }
+
+    private void putBean(Object bean) {
+        if (bean == null) {
+            return;
+        }
+        beanMap.put(bean.getClass().getName(), bean);
     }
 }

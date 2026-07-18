@@ -35,7 +35,10 @@ import io.vertx.ext.web.common.template.TemplateEngine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.*;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -109,8 +112,7 @@ public class AnnotationScanner {
     private Handler<RoutingContext> proxyHandler(Class<?> a, Method method, HttpHandler annotation) throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
         Parameter[] parameters = method.getParameters();
 
-        Constructor<?> declaredConstructor = a.getDeclaredConstructor();
-        Object o = declaredConstructor.newInstance();
+        Object o = application.getBean(a);
 
         Handler<RoutingContext> handler = rc -> {
             try {

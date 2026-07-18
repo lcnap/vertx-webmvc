@@ -20,7 +20,9 @@ package com.github.lcnap.vertx.webmvc.utils;
 import com.github.lcnap.vertx.webmvc.HttpHandler;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Method;
+import java.net.JarURLConnection;
 import java.net.URL;
 import java.util.HashSet;
 import java.util.Set;
@@ -46,6 +48,94 @@ public class Reflection {
         primitiveType.add(double.class);
         primitiveType.add(float.class);
         primitiveType.add(long.class);
+    }
+
+    /**
+     * 支持file,jar包扫描
+     *
+     * @param pkg 包名
+     * @return
+     * @throws IOException
+     * @throws ClassNotFoundException
+     */
+    public static Set<Class<?>> findHandler(String pkg) throws IOException, ClassNotFoundException {
+        String path = pkg.replace('.', '/');
+
+        Set<Class<?>> classSet = new HashSet<>();
+
+        var classLoader = Thread.currentThread().getContextClassLoader();
+
+        var urls = classLoader.getResources(path);
+
+        while (urls.hasMoreElements()) {
+            var url = urls.nextElement();
+            var protocol = url.getProtocol();
+            switch (protocol) {
+                case "file" -> {
+                    scanFileDir(url.getPath(), pkg, classSet);
+                }
+                case "jar" -> {
+                    var conn = (JarURLConnection) url.openConnection();
+                    var jar = conn.getJarFile();
+                    var entries = jar.entries();
+
+                    while (entries.hasMoreElements()) {
+                        var entry = entries.nextElement();
+                        var name = entry.getName();
+                        if (name.endsWith(".class") && name.startsWith(path)) {
+                            var className = name.replace('/', '.').replace(".class", "");
+                            var clazz = Class.forName(className);
+                            Method[] declaredMethods = clazz.getDeclaredMethods();
+                            for (Method method : declaredMethods) {
+                                HttpHandler annotation = method.getAnnotation(HttpHandler.class);
+                                if (annotation != null) {
+                                    classSet.add(clazz);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                }
+                default -> {
+
+                }
+            }
+        }
+
+
+        return classSet;
+
+    }
+
+    private static void scanFileDir(String path, String pkg, Set<Class<?>> classSet) throws ClassNotFoundException {
+        var dir = new File(path);
+        if (!dir.exists()) {
+            return;
+        }
+        var list = dir.listFiles();
+        for (File file : list) {
+            if (file.isDirectory()) {
+                scanFileDir(file.getAbsolutePath(), pkg + "." + file.getName(), classSet);
+            } else if (file.isFile() && file.getName().endsWith(".class")) {
+                var className = pkg + "." + file.getName().replace(".class", "");
+                loadClass(className, classSet);
+            }
+        }
+
+    }
+
+    private static void loadClass(String className, Set<Class<?>> classSet) throws ClassNotFoundException {
+        Class<?> clazz = Class.forName(className);
+        Method[] declaredMethods = clazz.getDeclaredMethods();
+        for (Method method : declaredMethods) {
+            HttpHandler annotation = method.getAnnotation(HttpHandler.class);
+            if (annotation != null) {
+                classSet.add(clazz);
+                break;
+            }
+        }
+
     }
 
     public static Set<Class<?>> findHandlerClass(String pkg) throws Exception {
@@ -96,7 +186,11 @@ public class Reflection {
     }
 
     public static void main(String... agrs) throws Exception {
-        Set<Class<?>> handlerClass = Reflection.findHandlerClass("pers.lcnap.vertxwebframework.test");
+
+        Set<Class<?>> handler = Reflection.findHandler("com.github.lcnap.vertx.webmvc");
+        for (Class<?> clazz : handler) {
+            IO.println(clazz.getName());
+        }
 
 
     }
