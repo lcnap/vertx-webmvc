@@ -59,7 +59,7 @@ public class AnnotationScanner {
         try {
             String pkg = this.application.appClass().getPackage().getName();
             Set<Class<?>> handlerClass =
-                    Reflection.findHandlerClass(pkg);
+                    Reflection.findHandler(pkg);
 
             for (Class<?> a : handlerClass) {
 
