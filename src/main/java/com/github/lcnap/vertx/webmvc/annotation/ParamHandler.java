@@ -28,7 +28,7 @@ import java.util.List;
 
 public class ParamHandler implements AnnotationHandler<Object> {
 
-    private RuleChecker<Object> ruleChecker = new RuleCheckerImpl<>();
+    private final RuleChecker<Object> ruleChecker = new RuleCheckerImpl<>();
 
     @Override
     public Object handle(Param annotation, Class<?> type, Field field, Object bean) {
